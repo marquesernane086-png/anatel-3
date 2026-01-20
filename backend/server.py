@@ -19,9 +19,8 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 ROOT_DIR = Path(__file__).parent
-# Carregar .env do backend (MongoDB, CORS) E da raiz (credenciais gateways)
-load_dotenv(ROOT_DIR / '.env')  # Backend .env
-load_dotenv('/app/.env')  # Root .env com credenciais gateways
+# Carregar apenas o .env do backend (todas as variáveis estão aqui agora)
+load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
