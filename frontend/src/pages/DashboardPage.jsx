@@ -18,7 +18,8 @@ import {
   Download,
   RefreshCw,
   Settings,
-  Database
+  Database,
+  LogOut
 } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
@@ -31,6 +32,7 @@ const API = `${BACKEND_URL}/api`;
 const COLORS = ['#0c326f', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 const DashboardPage = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [chartData, setChartData] = useState([]);
   const [transacoes, setTransacoes] = useState([]);
@@ -39,6 +41,13 @@ const DashboardPage = () => {
   const [filtroGateway, setFiltroGateway] = useState('todos');
   const [gatewayAtivo, setGatewayAtivo] = useState('pagloop');
   const [cnpjStats, setCnpjStats] = useState(null);
+
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
+    toast.success('Logout realizado');
+    navigate('/login');
+  };
 
   useEffect(() => {
     carregarDados();
