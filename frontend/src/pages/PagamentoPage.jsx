@@ -164,6 +164,8 @@ const PagamentoPage = () => {
                     qrStyle="dots"
                     eyeRadius={10}
                   />
+                </div>
+              </div>
                   />
                 </div>
               </div>

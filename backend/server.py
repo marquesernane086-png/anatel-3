@@ -858,7 +858,7 @@ async def processar_importacao_background(conteudo: str, tipo: str):
             try:
                 await db.cnpjs_subset.insert_many(batch, ordered=False)
                 importacao_status["total_importados"] += len(batch)
-            except Exception as e:
+            except Exception:
                 importacao_status["total_erros"] += len(batch)
         
         importacao_status["total_processados"] = total_linhas
