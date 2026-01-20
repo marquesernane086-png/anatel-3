@@ -1,0 +1,378 @@
+RESUMO TECNICO: REQUISICOES FURIAPAY API
+
+================================================================================
+CREDENCIAIS
+================================================================================
+
+BASE_URL: https://api.furiapaybr.com/v1
+PUBLIC_KEY: pk_kQcYJ1HIbSfG15N4lhE-156X8kiJjjWrR4PP4ddHgofCO7Us
+SECRET_KEY: sk_VSTmbcV7BU_I8PqeQ7HkALkQtGYsdqN2REEwskbXY9oaB_hv
+LIMITE_PIX: R$ 1.500,00
+
+================================================================================
+AUTENTICACAO
+================================================================================
+
+Tipo: Basic Auth
+Formato: Basic base64(public_key:secret_key)
+
+Python:
+import base64
+credentials = f"{public_key}:{secret_key}".encode('utf-8')
+auth_header = 'Basic ' + base64.b64encode(credentials).decode('utf-8')
+
+Header gerado:
+Authorization: Basic cGtfa1FjWUoxSEliU2ZHMTVONGxoRS0xNTZYOGtpSmpqV3JSNFBQNGRkSGdvZkNPN1VzOnNrX1ZTVG1iY1Y3QlVfSThQcWVRN0hrQUxrUXRHWXNkcU4yUkVFd3NrYlhZOW9hQl9odg==
+
+================================================================================
+CRIAR TRANSACAO PIX
+================================================================================
+
+Endpoint: POST /transactions
+
+Headers:
+{
+  "Authorization": "Basic [base64_credentials]",
+  "Content-Type": "application/json"
+}
+
+Body (JSON):
+{
+  "amount": 150000,
+  "paymentMethod": "pix",
+  "customer": {
+    "name": "Joao Silva",
+    "email": "joao@email.com",
+    "document": {
+      "type": "cpf",
+      "number": "12345678901"
+    },
+    "phoneNumber": "11987654321"
+  },
+  "items": [
+    {
+      "title": "Backstage Masculino",
+      "unitPrice": 75000,
+      "quantity": 2,
+      "tangible": false
+    }
+  ]
+}
+
+Response (200 OK):
+{
+  "id": 38354339,
+  "amount": 150000,
+  "status": "waiting_payment",
+  "paymentMethod": "pix",
+  "createdAt": "2026-01-14T10:39:35.560Z",
+  "pix": {
+    "qrcode": "00020101021226940014br.gov.bcb.pix2572qrcode.hyperwalletip.com.br/dynamic/8ecf2ce1-4cb3-4843-967b-1a5d43fc8aee5204000053039865802BR5914PAGAMENTO LTDA6009Sao Paulo62070503***6304E589",
+    "expirationDate": "2026-01-16"
+  },
+  "customer": {
+    "id": 39378240,
+    "name": "Joao Silva",
+    "email": "joao@email.com"
+  },
+  "fee": {
+    "netAmount": 145337,
+    "estimatedFee": 4663
+  }
+}
+
+================================================================================
+CONSULTAR STATUS DA TRANSACAO
+================================================================================
+
+Endpoint: GET /transactions/{transaction_id}
+
+Headers:
+{
+  "Authorization": "Basic [base64_credentials]",
+  "Content-Type": "application/json"
+}
+
+Exemplo:
+GET https://api.furiapaybr.com/v1/transactions/38354339
+
+Response:
+{
+  "id": 38354339,
+  "amount": 150000,
+  "status": "paid",
+  "paymentMethod": "pix",
+  "paidAt": "2026-01-14T10:45:00.000Z",
+  "paidAmount": 150000
+}
+
+Status possiveis:
+- waiting_payment (aguardando)
+- paid (pago)
+- approved (aprovado)
+- refused (recusado)
+- cancelled (cancelado)
+
+================================================================================
+CARTAO DE CREDITO
+================================================================================
+
+IMPORTANTE: Tokenize no frontend, NUNCA envie dados do cartao para backend!
+
+Request (mesmo endpoint):
+{
+  "amount": 150000,
+  "paymentMethod": "credit_card",
+  "installments": 1,
+  "card": {
+    "token": "card_token_gerado_no_frontend"
+  },
+  "customer": { ... },
+  "items": [ ... ],
+  "postbackUrl": "https://seusite.com/api/webhooks/furiapay"
+}
+
+Response:
+{
+  "id": 38354400,
+  "status": "paid",
+  "card": {
+    "brand": "Visa",
+    "lastDigits": "1111"
+  }
+}
+
+================================================================================
+PONTOS CRITICOS
+================================================================================
+
+1. VALORES EM CENTAVOS (multiplicar por 100)
+   R$ 1.500,00 = 150000
+   R$ 750,00 = 75000
+
+2. CPF SEM FORMATACAO
+   Certo: "12345678901"
+   Errado: "123.456.789-01"
+
+3. TELEFONE SEM FORMATACAO
+   Certo: "11987654321"
+   Errado: "(11) 98765-4321"
+
+4. LIMITE PIX
+   Maximo: R$ 1.500,00 (150000 centavos)
+   Acima disso: use cartao ou split payment
+
+5. TIMEOUT
+   PIX: 60 segundos
+   Cartao: 30 segundos
+
+================================================================================
+EXEMPLO CURL COMPLETO
+================================================================================
+
+# Gerar Auth Base64
+AUTH=$(echo -n "pk_kQcYJ1HIbSfG15N4lhE-156X8kiJjjWrR4PP4ddHgofCO7Us:sk_VSTmbcV7BU_I8PqeQ7HkALkQtGYsdqN2REEwskbXY9oaB_hv" | base64)
+
+# Criar PIX
+curl -X POST "https://api.furiapaybr.com/v1/transactions" \
+  -H "Authorization: Basic $AUTH" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 150000,
+    "paymentMethod": "pix",
+    "customer": {
+      "name": "Teste Usuario",
+      "email": "teste@email.com",
+      "document": {"type": "cpf", "number": "12345678901"},
+      "phoneNumber": "11999999999"
+    },
+    "items": [
+      {"title": "Ingresso Teste", "unitPrice": 150000, "quantity": 1, "tangible": false}
+    ]
+  }'
+
+# Consultar status
+curl -X GET "https://api.furiapaybr.com/v1/transactions/38354339" \
+  -H "Authorization: Basic $AUTH" \
+  -H "Content-Type: application/json"
+
+================================================================================
+CODIGO PYTHON COMPLETO
+================================================================================
+
+import httpx
+import base64
+from typing import Dict
+
+async def furiapay_create_pix(amount_brl: float, customer: dict, items: list) -> dict:
+    # Config
+    base_url = "https://api.furiapaybr.com/v1"
+    public_key = "pk_kQcYJ1HIbSfG15N4lhE-156X8kiJjjWrR4PP4ddHgofCO7Us"
+    secret_key = "sk_VSTmbcV7BU_I8PqeQ7HkALkQtGYsdqN2REEwskbXY9oaB_hv"
+    
+    # Auth
+    credentials = f"{public_key}:{secret_key}".encode('utf-8')
+    auth = 'Basic ' + base64.b64encode(credentials).decode('utf-8')
+    
+    headers = {
+        'Authorization': auth,
+        'Content-Type': 'application/json'
+    }
+    
+    # Limpar formatacao
+    cpf_limpo = customer['cpf'].replace('.', '').replace('-', '')
+    tel_limpo = customer['phone'].replace('(', '').replace(')', '').replace('-', '').replace(' ', '')
+    
+    # Converter itens
+    mapped_items = []
+    for item in items:
+        mapped_items.append({
+            'title': item['name'],
+            'unitPrice': int(item['unit_price'] * 100),
+            'quantity': item['qty'],
+            'tangible': False
+        })
+    
+    # Payload
+    payload = {
+        'amount': int(amount_brl * 100),
+        'paymentMethod': 'pix',
+        'customer': {
+            'name': customer['name'],
+            'email': customer['email'],
+            'document': {
+                'type': 'cpf',
+                'number': cpf_limpo
+            },
+            'phoneNumber': tel_limpo
+        },
+        'items': mapped_items
+    }
+    
+    # Request
+    async with httpx.AsyncClient(timeout=60) as client:
+        response = await client.post(
+            f"{base_url}/transactions",
+            json=payload,
+            headers=headers
+        )
+    
+    if response.status_code >= 400:
+        raise Exception(f"FuriaPay error: {response.text}")
+    
+    return response.json()
+
+async def furiapay_get_transaction(transaction_id: str) -> dict:
+    # Config
+    base_url = "https://api.furiapaybr.com/v1"
+    public_key = "pk_kQcYJ1HIbSfG15N4lhE-156X8kiJjjWrR4PP4ddHgofCO7Us"
+    secret_key = "sk_VSTmbcV7BU_I8PqeQ7HkALkQtGYsdqN2REEwskbXY9oaB_hv"
+    
+    # Auth
+    credentials = f"{public_key}:{secret_key}".encode('utf-8')
+    auth = 'Basic ' + base64.b64encode(credentials).decode('utf-8')
+    
+    headers = {
+        'Authorization': auth,
+        'Content-Type': 'application/json'
+    }
+    
+    # Request
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.get(
+            f"{base_url}/transactions/{transaction_id}",
+            headers=headers
+        )
+    
+    if response.status_code >= 400:
+        raise Exception(f"FuriaPay error: {response.text}")
+    
+    return response.json()
+
+================================================================================
+WEBHOOK (NOTIFICACAO DE PAGAMENTO)
+================================================================================
+
+A FuriaPay envia POST para seu endpoint quando o status muda.
+
+Seu endpoint deve ser:
+POST https://keinemusikinrio.com.br/api/webhooks/furiapay
+
+Payload recebido:
+{
+  "id": 38354339,
+  "status": "paid",
+  "amount": 150000,
+  "paymentMethod": "pix",
+  "paidAt": "2026-01-14T10:45:00.000Z"
+}
+
+Seu backend deve:
+1. Buscar pedido pelo transaction_id
+2. Atualizar status para "paid"
+3. Gerar ingressos
+4. Enviar email ao cliente
+
+================================================================================
+FLUXO COMPLETO
+================================================================================
+
+1. Cliente clica "Gerar PIX" no site
+2. Frontend chama: POST /api/orders (cria pedido)
+3. Frontend chama: POST /api/payments/furiapay/pix
+4. Backend chama FuriaPay: POST /transactions
+5. FuriaPay retorna QR Code
+6. Backend salva transaction_id no pedido
+7. Backend envia email com QR Code
+8. Frontend mostra QR Code para cliente
+9. Cliente escaneia e paga no banco
+10. FuriaPay detecta pagamento
+11. FuriaPay chama webhook: POST /api/webhooks/furiapay
+12. Backend atualiza pedido para "paid"
+13. Backend gera ingressos automaticamente
+14. Backend envia email com ingressos em PDF
+
+================================================================================
+ERROS COMUNS E SOLUCOES
+================================================================================
+
+401 Unauthorized
+Causa: Credenciais incorretas
+Solucao: Verifique Public Key e Secret Key
+
+400 Invalid CPF
+Causa: CPF com pontos/tracos
+Solucao: Envie apenas numeros: "12345678901"
+
+400 Invalid phone
+Causa: Telefone formatado
+Solucao: Envie apenas numeros: "11987654321"
+
+400 Amount error
+Causa: Valor nao esta em centavos
+Solucao: Multiplique por 100
+
+400 Exceeds limit
+Causa: PIX acima de R$ 1.500
+Solucao: Use cartao ou split payment
+
+Webhook nao recebe eventos
+Causa: URL nao esta acessivel
+Solucao: Verifique se URL esta publica e com HTTPS valido
+
+================================================================================
+INFORMACOES ADICIONAIS
+================================================================================
+
+Arquivo codigo fonte: /app/backend/app/services/furiapay_service.py
+Arquivo rotas: /app/backend/app/routers/orders.py
+Arquivo webhook: /app/backend/app/routers/webhooks.py
+Arquivo config: /app/backend/.env
+
+Limite atual do sistema: R$ 1.500,00
+Taxa cartao aplicada no frontend: 5% (1.05x)
+Parcelamento: Ate 12x (configuravel)
+
+================================================================================
+FIM DO RESUMO
+================================================================================
