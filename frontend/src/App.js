@@ -5,6 +5,8 @@ import DebitosPage from './pages/DebitosPage';
 import PagamentoPage from './pages/PagamentoPage';
 import ConfirmacaoPage from './pages/ConfirmacaoPage';
 import DashboardPage from './pages/DashboardPage';
+import LoginPage from './pages/LoginPage';
+import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
 function App() {
@@ -16,7 +18,15 @@ function App() {
           <Route path="/debitos" element={<DebitosPage />} />
           <Route path="/pagamento" element={<PagamentoPage />} />
           <Route path="/confirmacao" element={<ConfirmacaoPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            } 
+          />
         </Routes>
         <Toaster position="top-center" />
       </div>
