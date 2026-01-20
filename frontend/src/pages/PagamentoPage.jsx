@@ -166,9 +166,6 @@ const PagamentoPage = () => {
                   />
                 </div>
               </div>
-                  />
-                </div>
-              </div>
 
               {/* Copia e Cola */}
               <div className="space-y-2">
