@@ -186,6 +186,10 @@ const DashboardPage = () => {
                 <Download className="w-4 h-4 mr-2" />
                 Exportar CSV
               </Button>
+              <Button onClick={handleLogout} variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                <LogOut className="w-4 h-4 mr-2" />
+                Sair
+              </Button>
             </div>
           </div>
 
