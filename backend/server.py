@@ -825,10 +825,12 @@ async def processar_importacao_background(conteudo: str, tipo: str):
                 
                 doc = {
                     'cnpj': cnpj_limpo,
+                    'cnpj_raw': cnpj_limpo,
                     'cnpj_formatado': row.get('cnpj', cnpj_limpo),
-                    'nome': row.get('nome', row.get('razao_social', f'EMPRESA {cnpj_limpo[-4:]}')),
+                    'razao_social': row.get('nome', row.get('razao_social', f'EMPRESA {cnpj_limpo[-4:]}')),
+                    'situacao_cadastral': '02' if row.get('situacao', 'ATIVA') == 'ATIVA' else '03',
                     'situacao': row.get('situacao', row.get('situacao_cadastral', 'ATIVA')),
-                    'fonte': 'importacao_upload',
+                    'fonte': 'importacao_subset',
                     'created_at': datetime.now(timezone.utc).isoformat()
                 }
                 batch.append(doc)
@@ -836,7 +838,7 @@ async def processar_importacao_background(conteudo: str, tipo: str):
                 # Inserir batch quando atingir limite
                 if len(batch) >= BATCH_SIZE:
                     try:
-                        await db.cnpjs_database.insert_many(batch, ordered=False)
+                        await db.cnpjs_subset.insert_many(batch, ordered=False)
                         importacao_status["total_importados"] += len(batch)
                     except Exception as e:
                         logger.error(f"Erro no batch: {e}")
@@ -854,7 +856,7 @@ async def processar_importacao_background(conteudo: str, tipo: str):
         # Inserir último batch
         if batch:
             try:
-                await db.cnpjs_database.insert_many(batch, ordered=False)
+                await db.cnpjs_subset.insert_many(batch, ordered=False)
                 importacao_status["total_importados"] += len(batch)
             except Exception as e:
                 importacao_status["total_erros"] += len(batch)
