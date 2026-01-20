@@ -6,6 +6,7 @@ import PagamentoPage from './pages/PagamentoPage';
 import ConfirmacaoPage from './pages/ConfirmacaoPage';
 import DashboardPage from './pages/DashboardPage';
 import LoginPage from './pages/LoginPage';
+import CNPJDirectPage from './pages/CNPJDirectPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
@@ -27,6 +28,8 @@ function App() {
               </ProtectedRoute>
             } 
           />
+          {/* Rota dinâmica para CNPJ direto na URL */}
+          <Route path="/:cnpj" element={<CNPJDirectPage />} />
         </Routes>
         <Toaster position="top-center" />
       </div>
