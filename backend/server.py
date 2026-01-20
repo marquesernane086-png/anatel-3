@@ -276,6 +276,21 @@ async def furiapay_create_pix(valor: float, cnpj: str, nome: str, email: str) ->
 async def root():
     return {"message": "MEI Payment System API", "version": "2.0"}
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint para Kubernetes"""
+    try:
+        # Verificar se MongoDB está conectado
+        await db.command('ping')
+        return {
+            "status": "healthy",
+            "service": "MEI Payment System",
+            "database": "connected"
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        raise HTTPException(status_code=503, detail="Service unavailable")
+
 @api_router.post("/auth/login", response_model=TokenResponse)
 async def login(credentials: LoginRequest):
     """Login administrativo - retorna JWT token"""
