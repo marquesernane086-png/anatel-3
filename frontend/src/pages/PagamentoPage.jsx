@@ -161,11 +161,9 @@ const PagamentoPage = () => {
                   <QRCode
                     value={pagamento.qr_code}
                     size={280}
-                    logoImage="https://www.gov.br/++theme++padrao_govbr/img/govbr-logo-large.png"
-                    logoWidth={60}
-                    logoHeight={60}
                     qrStyle="dots"
                     eyeRadius={10}
+                  />
                   />
                 </div>
               </div>
