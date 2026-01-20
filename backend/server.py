@@ -105,6 +105,30 @@ class TokenResponse(BaseModel):
 
 
 # Helper Functions
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verifica senha"""
+    return pwd_context.verify(plain_password, hashed_password)
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    """Cria JWT token"""
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=15))
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Verifica token JWT"""
+    try:
+        token = credentials.credentials
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise HTTPException(status_code=401, detail="Token inválido")
+        return username
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Token inválido ou expirado")
+
 def get_active_gateway() -> str:
     """Lê o gateway ativo do arquivo .gateway"""
     try:
