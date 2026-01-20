@@ -436,6 +436,140 @@ async def list_transactions(limit: int = 50):
     return transactions
 
 
+# Dashboard Endpoints
+@api_router.get("/dashboard/stats")
+async def dashboard_stats():
+    """Estatísticas gerais do dashboard"""
+    try:
+        # Total de transações
+        total_transacoes = await db.transactions.count_documents({})
+        
+        # Total arrecadado
+        pipeline_total = [
+            {"$group": {"_id": None, "total": {"$sum": "$valor"}}}
+        ]
+        result_total = await db.transactions.aggregate(pipeline_total).to_list(1)
+        total_arrecadado = result_total[0]["total"] if result_total else 0
+        
+        # Transações por status
+        pipeline_status = [
+            {"$group": {"_id": "$status", "count": {"$sum": 1}}}
+        ]
+        status_counts = await db.transactions.aggregate(pipeline_status).to_list(10)
+        
+        # Transações por gateway
+        pipeline_gateway = [
+            {"$group": {"_id": "$gateway", "count": {"$sum": 1}, "total": {"$sum": "$valor"}}}
+        ]
+        gateway_stats = await db.transactions.aggregate(pipeline_gateway).to_list(10)
+        
+        # Últimas 24h
+        from datetime import timedelta
+        yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+        transacoes_24h = await db.transactions.count_documents({
+            "created_at": {"$gte": yesterday}
+        })
+        
+        # Taxa de sucesso
+        total_pagas = await db.transactions.count_documents({"status": {"$in": ["paid", "approved", "CONFIRMED"]}})
+        taxa_sucesso = (total_pagas / total_transacoes * 100) if total_transacoes > 0 else 0
+        
+        return {
+            "total_transacoes": total_transacoes,
+            "total_arrecadado": round(total_arrecadado, 2),
+            "transacoes_24h": transacoes_24h,
+            "taxa_sucesso": round(taxa_sucesso, 2),
+            "por_status": status_counts,
+            "por_gateway": gateway_stats,
+            "gateway_ativo": get_active_gateway()
+        }
+    except Exception as e:
+        logger.error(f"Erro ao buscar stats: {e}")
+        return {
+            "total_transacoes": 0,
+            "total_arrecadado": 0,
+            "transacoes_24h": 0,
+            "taxa_sucesso": 0,
+            "por_status": [],
+            "por_gateway": [],
+            "gateway_ativo": get_active_gateway()
+        }
+
+@api_router.get("/dashboard/grafico")
+async def dashboard_chart(days: int = 7):
+    """Dados para gráfico de transações por dia"""
+    try:
+        from datetime import timedelta
+        
+        # Últimos N dias
+        start_date = datetime.now(timezone.utc) - timedelta(days=days)
+        
+        pipeline = [
+            {"$match": {"created_at": {"$gte": start_date.isoformat()}}},
+            {
+                "$group": {
+                    "_id": {"$substr": ["$created_at", 0, 10]},
+                    "count": {"$sum": 1},
+                    "total": {"$sum": "$valor"}
+                }
+            },
+            {"$sort": {"_id": 1}}
+        ]
+        
+        result = await db.transactions.aggregate(pipeline).to_list(days)
+        
+        # Preencher dias sem transações
+        chart_data = []
+        for i in range(days):
+            date = (datetime.now(timezone.utc) - timedelta(days=days-i-1)).strftime('%Y-%m-%d')
+            existing = next((r for r in result if r["_id"] == date), None)
+            chart_data.append({
+                "date": date,
+                "count": existing["count"] if existing else 0,
+                "total": round(existing["total"], 2) if existing else 0
+            })
+        
+        return chart_data
+    except Exception as e:
+        logger.error(f"Erro ao gerar gráfico: {e}")
+        return []
+
+@api_router.get("/dashboard/transacoes")
+async def dashboard_transactions(
+    status: Optional[str] = None,
+    gateway: Optional[str] = None,
+    data_inicio: Optional[str] = None,
+    data_fim: Optional[str] = None,
+    limit: int = 100
+):
+    """Lista transações com filtros"""
+    try:
+        query = {}
+        
+        if status:
+            query["status"] = status
+        
+        if gateway:
+            query["gateway"] = gateway
+        
+        if data_inicio or data_fim:
+            query["created_at"] = {}
+            if data_inicio:
+                query["created_at"]["$gte"] = data_inicio
+            if data_fim:
+                query["created_at"]["$lte"] = data_fim
+        
+        transactions = await db.transactions.find(
+            query,
+            {"_id": 0}
+        ).sort("created_at", -1).limit(limit).to_list(limit)
+        
+        return transactions
+    except Exception as e:
+        logger.error(f"Erro ao listar transações: {e}")
+        return []
+
+
 # Include router
 app.include_router(api_router)
 
