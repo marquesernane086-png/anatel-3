@@ -1005,6 +1005,39 @@ async def status_importacao():
     return importacao_status
 
 
+@api_router.post("/dashboard/reset")
+async def reset_dashboard(current_user: str = Depends(get_current_user)):
+    """Reseta todas as estatísticas e transações do dashboard
+    
+    CUIDADO: Esta ação é irreversível!
+    Remove:
+    - Todas as transações
+    - Cache de CNPJs
+    - (Mantém: Subset de CNPJs prioritários)
+    """
+    try:
+        # Deletar todas as transações
+        result_trans = await db.transactions.delete_many({})
+        
+        # Deletar cache de CNPJs (mas manter subset)
+        result_cache = await db.cnpjs_cache.delete_many({})
+        
+        logger.warning(f"[RESET] Dashboard resetado por {current_user}")
+        logger.warning(f"  - {result_trans.deleted_count} transações removidas")
+        logger.warning(f"  - {result_cache.deleted_count} CNPJs em cache removidos")
+        
+        return {
+            "success": True,
+            "transacoes_removidas": result_trans.deleted_count,
+            "cache_removido": result_cache.deleted_count,
+            "message": "Dashboard resetado com sucesso",
+            "subset_mantido": True
+        }
+    except Exception as e:
+        logger.error(f"Erro ao resetar dashboard: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # Include router
 app.include_router(api_router)
 
