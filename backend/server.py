@@ -95,6 +95,14 @@ class GatewayResponse(BaseModel):
     gateway: str
     disponiveis: List[str]
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
 
 # Helper Functions
 def get_active_gateway() -> str:
