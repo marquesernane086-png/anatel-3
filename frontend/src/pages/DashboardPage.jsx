@@ -70,13 +70,18 @@ const DashboardPage = () => {
 
   const carregarDados = async () => {
     try {
+      const token = localStorage.getItem('auth_token');
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
+
       // Stats
-      const statsResponse = await axios.get(`${API}/dashboard/stats`);
+      const statsResponse = await axios.get(`${API}/dashboard/stats`, config);
       setStats(statsResponse.data);
       setGatewayAtivo(statsResponse.data.gateway_ativo);
 
       // Chart data
-      const chartResponse = await axios.get(`${API}/dashboard/grafico?days=7`);
+      const chartResponse = await axios.get(`${API}/dashboard/grafico?days=7`, config);
       setChartData(chartResponse.data);
 
       // Transactions
@@ -84,7 +89,7 @@ const DashboardPage = () => {
       if (filtroStatus !== 'todos') url += `&status=${filtroStatus}`;
       if (filtroGateway !== 'todos') url += `&gateway=${filtroGateway}`;
       
-      const transResponse = await axios.get(url);
+      const transResponse = await axios.get(url, config);
       setTransacoes(transResponse.data);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
