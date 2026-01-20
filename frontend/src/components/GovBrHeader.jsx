@@ -57,11 +57,10 @@ const GovBrHeader = () => {
       <div className="w-full bg-[#0c326f] text-white hidden md:block">
         <div className="max-w-[1200px] mx-auto px-4 sm:px-8">
           <nav className="flex items-center gap-8 h-[48px] text-[14px] font-semibold">
-            <a href="/" className="hover:bg-[#06214d] px-3 h-full flex items-center transition-colors">Início</a>
-            <a href="/dashboard" className="hover:bg-[#06214d] px-3 h-full flex items-center transition-colors">Dashboard</a>
             <a href="#" className="hover:bg-[#06214d] px-3 h-full flex items-center transition-colors">Assuntos</a>
             <a href="#" className="hover:bg-[#06214d] px-3 h-full flex items-center transition-colors">Centrais de Conteúdo</a>
             <a href="#" className="hover:bg-[#06214d] px-3 h-full flex items-center transition-colors">Acesso à Informação</a>
+            <a href="#" className="hover:bg-[#06214d] px-3 h-full flex items-center transition-colors">Canais de Atendimento</a>
           </nav>
         </div>
       </div>
