@@ -53,6 +53,30 @@ const DashboardPage = () => {
     navigate('/login');
   };
 
+  const handleReset = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await axios.post(
+        `${API}/dashboard/reset`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      toast.success(
+        `Dashboard resetado! ${response.data.transacoes_removidas} transações removidas`
+      );
+      
+      // Recarregar dados
+      carregarDados();
+      carregarCNPJStats();
+    } catch (error) {
+      console.error('Erro ao resetar:', error);
+      toast.error('Erro ao resetar dashboard');
+    }
+  };
+
   useEffect(() => {
     carregarDados();
     carregarCNPJStats();
