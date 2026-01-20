@@ -20,7 +20,7 @@ const HomePage = () => {
   const [showDebitos, setShowDebitos] = useState(false);
   const navigate = useNavigate();
 
-  // Verificar se tem CNPJ na URL
+  // Verificar se tem CNPJ na URL (query string ?cnpj=)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const cnpjUrl = urlParams.get('cnpj');
@@ -28,6 +28,7 @@ const HomePage = () => {
       setCnpj(cnpjUrl);
       consultarCNPJ(cnpjUrl);
     }
+    // eslint-disable-next-line
   }, []);
 
   const consultarCNPJ = async (cnpjConsulta) => {
