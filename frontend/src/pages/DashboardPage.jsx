@@ -38,12 +38,26 @@ const DashboardPage = () => {
   const [filtroStatus, setFiltroStatus] = useState('todos');
   const [filtroGateway, setFiltroGateway] = useState('todos');
   const [gatewayAtivo, setGatewayAtivo] = useState('pagloop');
+  const [cnpjStats, setCnpjStats] = useState(null);
 
   useEffect(() => {
     carregarDados();
-    const interval = setInterval(carregarDados, 30000); // Atualizar a cada 30s
+    carregarCNPJStats();
+    const interval = setInterval(() => {
+      carregarDados();
+      carregarCNPJStats();
+    }, 30000);
     return () => clearInterval(interval);
   }, [filtroStatus, filtroGateway]);
+
+  const carregarCNPJStats = async () => {
+    try {
+      const response = await axios.get(`${API}/cnpjs/stats`);
+      setCnpjStats(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar stats CNPJs:', error);
+    }
+  };
 
   const carregarDados = async () => {
     try {
