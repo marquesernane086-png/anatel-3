@@ -230,50 +230,67 @@ async def root():
 
 @api_router.post("/cnpj/consultar", response_model=CNPJResponse)
 async def consultar_cnpj(data: CNPJConsulta):
-    """Consulta dados do CNPJ - MOCKADO primeiro, API como reserva"""
+    """Consulta dados do CNPJ - Mockado primeiro, API como backup"""
     cnpj_limpo = data.cnpj.replace('.', '').replace('/', '').replace('-', '')
     
-    # ESTRATÉGIA: Retornar mockado PRIMEIRO (rápido e confiável)
-    # API externa só é usada se especificamente requisitado ou como validação
+    # Base de dados mockada para testes rápidos
+    # Adicione CNPJs conhecidos aqui para resposta instantânea
+    CNPJS_MOCKADOS = {
+        '12345678000190': {
+            'cnpj': '12.345.678/0001-90',
+            'nome': 'EMPRESA MEI TESTE LTDA',
+            'situacao': 'ATIVA'
+        },
+        '00000000000191': {
+            'cnpj': '00.000.000/0001-91',
+            'nome': 'MEI EXEMPLO SERVICOS LTDA',
+            'situacao': 'ATIVA'
+        },
+        '11222333000181': {
+            'cnpj': '11.222.333/0001-81',
+            'nome': 'CONSULTORIA MEI BRASIL LTDA',
+            'situacao': 'ATIVA'
+        }
+        # Adicione mais CNPJs conforme necessário
+    }
     
-    # Gerar nome fictício baseado no CNPJ para parecer mais realista
+    # PASSO 1: Verificar se CNPJ está na base mockada
+    if cnpj_limpo in CNPJS_MOCKADOS:
+        logger.info(f"CNPJ {cnpj_limpo} - Encontrado na base mockada (instantâneo)")
+        return CNPJResponse(**CNPJS_MOCKADOS[cnpj_limpo])
+    
+    # PASSO 2: CNPJ não encontrado, consultar API externa como BACKUP
+    logger.info(f"CNPJ {cnpj_limpo} - Não encontrado em mockados, consultando API externa...")
+    
+    try:
+        # Timeout de 5s - se demorar, vai para fallback
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.get(
+                f"https://app-site-s2p-bff-prod.azurewebsites.net/v2/ReceitaFederal/{cnpj_limpo}"
+            )
+            
+            if response.status_code == 200:
+                api_data = response.json()
+                if api_data.get('ResponseDetail'):
+                    detail = api_data['ResponseDetail']
+                    logger.info(f"CNPJ {cnpj_limpo} - Dados obtidos da API externa")
+                    return CNPJResponse(
+                        cnpj=detail.get('cnpj', data.cnpj),
+                        nome=detail.get('nome', 'Empresa MEI'),
+                        situacao=detail.get('situacao', 'ATIVA')
+                    )
+    except Exception as e:
+        logger.warning(f"API CNPJ falhou ou timeout: {e}")
+    
+    # PASSO 3: Se API falhar, retornar mockado genérico
     ultimos_digitos = cnpj_limpo[-4:] if len(cnpj_limpo) >= 4 else "0001"
+    logger.info(f"CNPJ {cnpj_limpo} - API falhou, retornando mockado genérico")
     
-    dados_mockados = CNPJResponse(
+    return CNPJResponse(
         cnpj=data.cnpj,
         nome=f"EMPRESA MEI {ultimos_digitos} LTDA",
         situacao="ATIVA"
     )
-    
-    # Retornar mockado imediatamente (sem delay)
-    logger.info(f"CNPJ {cnpj_limpo} - Retornando dados mockados (rápido)")
-    return dados_mockados
-    
-    # NOTA: API externa comentada, mas disponível se precisar no futuro
-    # Para usar API real, descomente o código abaixo e comente o return acima
-    
-    # try:
-    #     # Timeout curto (2s) - se demorar, retorna mockado
-    #     async with httpx.AsyncClient(timeout=2.0) as client:
-    #         response = await client.get(
-    #             f"https://app-site-s2p-bff-prod.azurewebsites.net/v2/ReceitaFederal/{cnpj_limpo}"
-    #         )
-    #         
-    #         if response.status_code == 200:
-    #             api_data = response.json()
-    #             if api_data.get('ResponseDetail'):
-    #                 detail = api_data['ResponseDetail']
-    #                 logger.info(f"CNPJ {cnpj_limpo} - Dados da API externa")
-    #                 return CNPJResponse(
-    #                     cnpj=detail.get('cnpj', data.cnpj),
-    #                     nome=detail.get('nome', dados_mockados.nome),
-    #                     situacao=detail.get('situacao', 'ATIVA')
-    #                 )
-    # except Exception as e:
-    #     logger.warning(f"API CNPJ timeout/erro: {e}")
-    # 
-    # # Se API falhar ou demorar, retorna mockado
-    # return dados_mockados
 
 @api_router.get("/cnpj/{cnpj}/debitos", response_model=DebitosResponse)
 async def obter_debitos(cnpj: str):
