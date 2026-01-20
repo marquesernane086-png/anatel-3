@@ -606,6 +606,93 @@ async def dashboard_transactions(
         return []
 
 
+# Endpoints de Gestão de CNPJs (para 3M+ registros)
+@api_router.post("/cnpjs/importar")
+async def importar_cnpjs(cnpjs: List[Dict[str, str]]):
+    """Importa CNPJs em massa para o banco de dados
+    
+    Body exemplo:
+    [
+        {"cnpj": "12345678000190", "nome": "Empresa 1", "situacao": "ATIVA"},
+        {"cnpj": "98765432000111", "nome": "Empresa 2", "situacao": "ATIVA"},
+        ...
+    ]
+    
+    Para importar 3M de registros, envie em batches de 1000-10000 por vez
+    """
+    try:
+        documentos = []
+        for item in cnpjs:
+            cnpj_limpo = item['cnpj'].replace('.', '').replace('/', '').replace('-', '')
+            doc = {
+                'cnpj': cnpj_limpo,
+                'cnpj_formatado': item['cnpj'],
+                'nome': item['nome'],
+                'situacao': item.get('situacao', 'ATIVA'),
+                'fonte': 'importacao_manual',
+                'created_at': datetime.now(timezone.utc).isoformat()
+            }
+            documentos.append(doc)
+        
+        # Inserção em massa (muito mais rápido)
+        result = await db.cnpjs_database.insert_many(documentos, ordered=False)
+        
+        logger.info(f"Importados {len(result.inserted_ids)} CNPJs")
+        
+        return {
+            "success": True,
+            "total_importados": len(result.inserted_ids),
+            "message": f"{len(result.inserted_ids)} CNPJs importados com sucesso"
+        }
+    except Exception as e:
+        logger.error(f"Erro na importação: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro ao importar CNPJs: {str(e)}")
+
+@api_router.post("/cnpjs/criar-indices")
+async def criar_indices():
+    """Cria índices no MongoDB para otimizar buscas em 3M+ registros
+    
+    Índice no campo 'cnpj' permite busca em O(log n) = ~1-5ms
+    """
+    try:
+        # Criar índice único no campo cnpj
+        await db.cnpjs_database.create_index("cnpj", unique=True)
+        
+        # Índice para situacao (para filtros)
+        await db.cnpjs_database.create_index("situacao")
+        
+        logger.info("Índices criados com sucesso")
+        
+        return {
+            "success": True,
+            "message": "Índices criados - banco otimizado para 3M+ registros"
+        }
+    except Exception as e:
+        logger.error(f"Erro ao criar índices: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/cnpjs/stats")
+async def cnpjs_stats():
+    """Estatísticas da base de CNPJs"""
+    try:
+        total = await db.cnpjs_database.count_documents({})
+        
+        # Por situação
+        pipeline_situacao = [
+            {"$group": {"_id": "$situacao", "count": {"$sum": 1}}}
+        ]
+        por_situacao = await db.cnpjs_database.aggregate(pipeline_situacao).to_list(10)
+        
+        return {
+            "total_cnpjs": total,
+            "por_situacao": por_situacao,
+            "formato": "Otimizado para 3M+ registros com índices"
+        }
+    except Exception as e:
+        logger.error(f"Erro ao buscar stats CNPJs: {e}")
+        return {"total_cnpjs": 0, "por_situacao": []}
+
+
 # Include router
 app.include_router(api_router)
 
