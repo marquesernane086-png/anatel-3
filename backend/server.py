@@ -438,8 +438,8 @@ async def obter_debitos(cnpj: str):
         total=161.80,
         quantidade_meses=2,
         debitos=[
-            DebitoItem(mes="Dezembro/2025", valor=80.90, status="EM ABERTO"),
-            DebitoItem(mes="Novembro/2025", valor=80.90, status="EM ABERTO")
+            DebitoItem(mes="Maio/2025", valor=80.90, status="EM ABERTO"),
+            DebitoItem(mes="Abril/2025", valor=80.90, status="EM ABERTO")
         ]
     )
 
