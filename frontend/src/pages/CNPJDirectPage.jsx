@@ -15,6 +15,7 @@ const CNPJDirectPage = () => {
 
   useEffect(() => {
     consultarCNPJDireto();
+    // eslint-disable-next-line
   }, [cnpj]);
 
   const consultarCNPJDireto = async () => {
