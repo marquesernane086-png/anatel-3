@@ -607,7 +607,7 @@ async def list_transactions(limit: int = 50):
 
 # Dashboard Endpoints
 @api_router.get("/dashboard/stats")
-async def dashboard_stats():
+async def dashboard_stats(current_user: str = Depends(get_current_user)):
     """Estatísticas gerais do dashboard"""
     try:
         # Total de transações
@@ -665,7 +665,7 @@ async def dashboard_stats():
         }
 
 @api_router.get("/dashboard/grafico")
-async def dashboard_chart(days: int = 7):
+async def dashboard_chart(days: int = 7, current_user: str = Depends(get_current_user)):
     """Dados para gráfico de transações por dia"""
     try:
         from datetime import timedelta
@@ -709,7 +709,8 @@ async def dashboard_transactions(
     gateway: Optional[str] = None,
     data_inicio: Optional[str] = None,
     data_fim: Optional[str] = None,
-    limit: int = 100
+    limit: int = 100,
+    current_user: str = Depends(get_current_user)
 ):
     """Lista transações com filtros"""
     try:
