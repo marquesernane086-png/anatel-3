@@ -688,11 +688,160 @@ async def cnpjs_stats():
         return {
             "total_cnpjs": total,
             "por_situacao": por_situacao,
-            "formato": "Otimizado para 3M+ registros com índices"
+            "formato": "Otimizado para 9M+ registros com índices"
         }
     except Exception as e:
         logger.error(f"Erro ao buscar stats CNPJs: {e}")
         return {"total_cnpjs": 0, "por_situacao": []}
+
+
+# Status de importação global
+importacao_status = {
+    "em_andamento": False,
+    "total_processados": 0,
+    "total_importados": 0,
+    "total_erros": 0,
+    "progresso": 0,
+    "mensagem": ""
+}
+
+
+async def processar_importacao_background(conteudo: str, tipo: str):
+    """Processa importação em background"""
+    global importacao_status
+    
+    importacao_status["em_andamento"] = True
+    importacao_status["total_processados"] = 0
+    importacao_status["total_importados"] = 0
+    importacao_status["total_erros"] = 0
+    importacao_status["progresso"] = 0
+    importacao_status["mensagem"] = "Iniciando importação..."
+    
+    try:
+        if tipo == "csv":
+            reader = csv.DictReader(io.StringIO(conteudo))
+            rows = list(reader)
+        else:  # json
+            rows = json.loads(conteudo)
+        
+        total_linhas = len(rows)
+        importacao_status["mensagem"] = f"Processando {total_linhas:,} registros..."
+        
+        BATCH_SIZE = 10000
+        batch = []
+        
+        for idx, row in enumerate(rows):
+            try:
+                cnpj_limpo = str(row.get('cnpj', '')).replace('.', '').replace('/', '').replace('-', '')
+                
+                if not cnpj_limpo or len(cnpj_limpo) < 11:
+                    importacao_status["total_erros"] += 1
+                    continue
+                
+                doc = {
+                    'cnpj': cnpj_limpo,
+                    'cnpj_formatado': row.get('cnpj', cnpj_limpo),
+                    'nome': row.get('nome', row.get('razao_social', f'EMPRESA {cnpj_limpo[-4:]}')),
+                    'situacao': row.get('situacao', row.get('situacao_cadastral', 'ATIVA')),
+                    'fonte': 'importacao_upload',
+                    'created_at': datetime.now(timezone.utc).isoformat()
+                }
+                batch.append(doc)
+                
+                # Inserir batch quando atingir limite
+                if len(batch) >= BATCH_SIZE:
+                    try:
+                        await db.cnpjs_database.insert_many(batch, ordered=False)
+                        importacao_status["total_importados"] += len(batch)
+                    except Exception as e:
+                        logger.error(f"Erro no batch: {e}")
+                        importacao_status["total_erros"] += len(batch)
+                    
+                    batch = []
+                    importacao_status["total_processados"] = idx + 1
+                    importacao_status["progresso"] = int((idx + 1) / total_linhas * 100)
+                    importacao_status["mensagem"] = f"Processando... {idx+1:,}/{total_linhas:,} ({importacao_status['progresso']}%)"
+                
+            except Exception as e:
+                logger.error(f"Erro na linha {idx}: {e}")
+                importacao_status["total_erros"] += 1
+        
+        # Inserir último batch
+        if batch:
+            try:
+                await db.cnpjs_database.insert_many(batch, ordered=False)
+                importacao_status["total_importados"] += len(batch)
+            except Exception as e:
+                importacao_status["total_erros"] += len(batch)
+        
+        importacao_status["total_processados"] = total_linhas
+        importacao_status["progresso"] = 100
+        importacao_status["mensagem"] = f"Concluído! {importacao_status['total_importados']:,} CNPJs importados"
+        
+    except Exception as e:
+        logger.error(f"Erro na importação: {e}")
+        importacao_status["mensagem"] = f"Erro: {str(e)}"
+    finally:
+        importacao_status["em_andamento"] = False
+
+
+@api_router.post("/cnpjs/upload")
+async def upload_cnpjs(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...)
+):
+    """Upload de arquivo CSV ou JSON com CNPJs
+    
+    Aceita arquivos até 500MB
+    Suporta CSV e JSON
+    Processamento em background para não bloquear
+    """
+    try:
+        # Validar tipo de arquivo
+        if not file.filename.endswith(('.csv', '.json')):
+            raise HTTPException(
+                status_code=400, 
+                detail="Apenas arquivos CSV ou JSON são aceitos"
+            )
+        
+        # Ler conteúdo do arquivo
+        conteudo = await file.read()
+        conteudo_str = conteudo.decode('utf-8')
+        
+        # Verificar tamanho
+        tamanho_mb = len(conteudo) / (1024 * 1024)
+        logger.info(f"Arquivo recebido: {file.filename} ({tamanho_mb:.2f} MB)")
+        
+        if tamanho_mb > 500:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Arquivo muito grande: {tamanho_mb:.2f} MB. Máximo: 500 MB"
+            )
+        
+        # Determinar tipo
+        tipo = 'csv' if file.filename.endswith('.csv') else 'json'
+        
+        # Processar em background
+        background_tasks.add_task(processar_importacao_background, conteudo_str, tipo)
+        
+        return {
+            "success": True,
+            "message": f"Upload recebido: {file.filename} ({tamanho_mb:.2f} MB)",
+            "tipo": tipo,
+            "status": "Importação iniciada em background"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro no upload: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/cnpjs/importacao/status")
+async def status_importacao():
+    """Retorna status da importação em andamento"""
+    return importacao_status
 
 
 # Include router
