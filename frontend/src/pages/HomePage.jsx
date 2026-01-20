@@ -176,16 +176,10 @@ const HomePage = () => {
                         {dadosEmpresa?.cnpj ? formatarCNPJ(dadosEmpresa.cnpj) : cnpj}
                       </span>
                     </div>
-                    <div className="flex justify-between py-2 border-b">
+                    <div className="flex justify-between py-2">
                       <span className="font-medium text-gray-600">Razão Social:</span>
                       <span className="font-semibold text-gray-900 uppercase">
                         {dadosEmpresa?.nome || 'Empresa MEI'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between py-2">
-                      <span className="font-medium text-gray-600">Situação:</span>
-                      <span className="font-semibold text-red-600">
-                        {dadosEmpresa?.situacao || 'INATIVA'}
                       </span>
                     </div>
                   </CardContent>

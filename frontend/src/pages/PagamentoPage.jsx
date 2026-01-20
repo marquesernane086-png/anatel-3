@@ -150,9 +150,6 @@ const PagamentoPage = () => {
                 <p className="text-3xl font-black text-gray-900">
                   {formatarValor(pagamento.valor)}
                 </p>
-                <p className="text-xs text-blue-600 mt-1">
-                  Via {pagamento.gateway.toUpperCase()}
-                </p>
               </div>
 
               {/* QR Code */}
