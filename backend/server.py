@@ -733,24 +733,51 @@ async def criar_indices():
 
 @api_router.get("/cnpjs/stats")
 async def cnpjs_stats():
-    """Estatísticas da base de CNPJs"""
+    """Estatísticas da base de CNPJs - Estratégia Híbrida"""
     try:
-        total = await db.cnpjs_database.count_documents({})
+        # Subset local (CNPJs prioritários importados)
+        total_subset = await db.cnpjs_subset.count_documents({})
         
-        # Por situação
-        pipeline_situacao = [
-            {"$group": {"_id": "$situacao", "count": {"$sum": 1}}}
-        ]
-        por_situacao = await db.cnpjs_database.aggregate(pipeline_situacao).to_list(10)
+        # Cache (CNPJs consultados e salvos automaticamente)
+        total_cache = await db.cnpjs_cache.count_documents({})
+        
+        # Cache hits
+        cache_stats = await db.cnpjs_cache.aggregate([
+            {"$group": {
+                "_id": None,
+                "total_hits": {"$sum": "$hit_count"},
+                "avg_hits": {"$avg": "$hit_count"}
+            }}
+        ]).to_list(1)
+        
+        total_hits = cache_stats[0]['total_hits'] if cache_stats else 0
+        
+        # Por fonte
+        cache_por_fonte = await db.cnpjs_cache.aggregate([
+            {"$group": {"_id": "$fonte", "count": {"$sum": 1}}}
+        ]).to_list(10)
         
         return {
-            "total_cnpjs": total,
-            "por_situacao": por_situacao,
-            "formato": "Otimizado para 9M+ registros com índices"
+            "subset_local": total_subset,
+            "cache_automatico": total_cache,
+            "total_disponivel_rapido": total_subset + total_cache,
+            "cache_hits_total": total_hits,
+            "por_fonte": cache_por_fonte,
+            "estrategia": "Híbrida: Subset + Cache + API Externa",
+            "info": {
+                "subset": f"{total_subset:,} CNPJs prioritários (1-5ms)",
+                "cache": f"{total_cache:,} CNPJs em cache (1-5ms)",  
+                "api_externa": "Backup para CNPJs novos (500ms-2s)",
+                "crescimento": "Cache cresce automaticamente com uso"
+            }
         }
     except Exception as e:
         logger.error(f"Erro ao buscar stats CNPJs: {e}")
-        return {"total_cnpjs": 0, "por_situacao": []}
+        return {
+            "subset_local": 0,
+            "cache_automatico": 0,
+            "total_disponivel_rapido": 0
+        }
 
 
 # Status de importação global
