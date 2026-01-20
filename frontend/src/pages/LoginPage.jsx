@@ -119,19 +119,6 @@ const LoginPage = () => {
             </Button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <div className="text-sm text-gray-600 space-y-2">
-              <p className="font-semibold text-center">Credenciais Padrão:</p>
-              <div className="bg-gray-50 p-3 rounded-lg font-mono text-xs">
-                <p>Usuário: <span className="font-bold">admin</span></p>
-                <p>Senha: <span className="font-bold">admin123</span></p>
-              </div>
-              <p className="text-xs text-center text-red-600">
-                ⚠️ Altere a senha em produção!
-              </p>
-            </div>
-          </div>
-
           <div className="mt-4 text-center">
             <Button
               variant="ghost"
