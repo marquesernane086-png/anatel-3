@@ -38,13 +38,13 @@ PAGLOOP_CLIENT_ID = os.getenv('PAGLOOP_CLIENT_ID', '')
 PAGLOOP_CLIENT_SECRET = os.getenv('PAGLOOP_CLIENT_SECRET', '')
 
 # Auth Configuration
-SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'seu-secret-key-super-seguro-aqui-mude-isso')
+SECRET_KEY = os.environ['JWT_SECRET_KEY']
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 horas
 
 # Senha do admin
-ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'mei2025')
-ADMIN_PASSWORD_HASH = os.getenv('ADMIN_PASSWORD_HASH', '$2b$12$GX/l4uRhk6WKeeu.5dAq0ufzJCAbxR3h902dsgexwbCNRq.p2o/tu')  # senha: Fl@mengo10
+ADMIN_USERNAME = os.environ['ADMIN_USERNAME']
+ADMIN_PASSWORD_HASH = os.environ['ADMIN_PASSWORD_HASH']
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
