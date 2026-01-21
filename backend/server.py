@@ -323,40 +323,67 @@ async def verify_token(current_user: str = Depends(get_current_user)):
 
 @api_router.post("/cnpj/consultar", response_model=CNPJResponse)
 async def consultar_cnpj(data: CNPJConsulta):
-    """Consulta CNPJ - API InverTexto PRIMEIRO
+    """Consulta CNPJ - API InverTexto PRINCIPAL
     
-    PRIORIDADE 1: API InverTexto (dados completos) - 500ms-1s
-    PRIORIDADE 2: Subset Local (CNPJs prioritários) - 1-5ms
-    PRIORIDADE 3: Cache (CNPJs consultados) - 1-5ms
-    PRIORIDADE 4: API Azure (backup) - 500ms-2s
-    PRIORIDADE 5: Mockado (fallback) - 1ms
+    ESTRATÉGIA SIMPLIFICADA:
+    1. Cache (se já consultado antes) - 1-5ms
+    2. API InverTexto (dados oficiais) - 500ms-1s
+    3. Mockado (fallback) - <1ms
     """
     cnpj_limpo = data.cnpj.replace('.', '').replace('/', '').replace('-', '')
     
-    # PRIORIDADE 1: API INVERTEXTO
+    # PASSO 1: Verificar CACHE primeiro (mais rápido)
+    try:
+        cache_doc = await db.cnpjs_cache.find_one(
+            {'cnpj_raw': cnpj_limpo},
+            {'_id': 0}
+        )
+        
+        if cache_doc:
+            cache_age_days = (datetime.now(timezone.utc) - datetime.fromisoformat(cache_doc['cached_at'])).days
+            
+            if cache_age_days < 7:  # Cache válido por 7 dias
+                logger.info(f"[CACHE] CNPJ {cnpj_limpo} encontrado ({cache_age_days}d)")
+                
+                await db.cnpjs_cache.update_one(
+                    {'cnpj_raw': cnpj_limpo},
+                    {'$inc': {'hit_count': 1}}
+                )
+                
+                return CNPJResponse(
+                    cnpj=cache_doc.get('cnpj_formatado', data.cnpj),
+                    nome=cache_doc.get('razao_social', 'Empresa'),
+                    situacao=cache_doc.get('situacao', 'ATIVA')
+                )
+    except Exception as e:
+        logger.error(f"Erro cache: {e}")
+    
+    # PASSO 2: API INVERTEXTO (Principal)
     if INVERTEXTO_API_TOKEN:
         try:
-            logger.info(f"[INVERTEXTO] Consultando CNPJ {cnpj_limpo}...")
+            logger.info(f"[INVERTEXTO] Consultando {cnpj_limpo}...")
+            
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.get(
                     f"{INVERTEXTO_BASE_URL}/cnpj/{cnpj_limpo}",
                     params={"token": INVERTEXTO_API_TOKEN}
                 )
                 
+                logger.info(f"[INVERTEXTO] Status: {response.status_code}")
+                
                 if response.status_code == 200:
                     api_data = response.json()
+                    logger.info(f"[INVERTEXTO] Dados recebidos: {api_data.get('razao_social', 'N/A')}")
                     
                     # Salvar no cache
                     cache_doc = {
                         'cnpj_raw': cnpj_limpo,
                         'cnpj_formatado': api_data.get('cnpj', data.cnpj),
                         'razao_social': api_data.get('razao_social', 'Empresa'),
-                        'situacao': api_data.get('situacao', {}).get('nome', 'ATIVA'),
-                        'fonte': 'invertexto_api',
+                        'situacao': api_data.get('situacao', {}).get('nome', 'ATIVA') if isinstance(api_data.get('situacao'), dict) else 'ATIVA',
+                        'fonte': 'invertexto',
                         'cached_at': datetime.now(timezone.utc).isoformat(),
-                        'last_accessed': datetime.now(timezone.utc).isoformat(),
-                        'hit_count': 0,
-                        'dados_completos': api_data  # Salvar dados completos
+                        'hit_count': 0
                     }
                     
                     try:
@@ -365,120 +392,21 @@ async def consultar_cnpj(data: CNPJConsulta):
                     except Exception:
                         pass
                     
-                    logger.info(f"[INVERTEXTO] Sucesso!")
                     return CNPJResponse(
                         cnpj=api_data.get('cnpj', data.cnpj),
                         nome=api_data.get('razao_social', 'Empresa'),
-                        situacao=api_data.get('situacao', {}).get('nome', 'ATIVA')
+                        situacao=cache_doc['situacao']
                     )
+                else:
+                    logger.warning(f"[INVERTEXTO] Status não-200: {response.status_code}")
+                    logger.warning(f"[INVERTEXTO] Response: {response.text[:200]}")
         except Exception as e:
-            logger.warning(f"[INVERTEXTO] Falhou: {e}")
+            logger.error(f"[INVERTEXTO] Erro: {str(e)}")
     
-    # PRIORIDADE 2: Subset Local
-    try:
-        cnpj_doc = await db.cnpjs_subset.find_one(
-            {'cnpj_raw': cnpj_limpo},
-            {'_id': 0}
-        )
-        
-        if cnpj_doc:
-            logger.info(f"[SUBSET] CNPJ {cnpj_limpo} encontrado no subset local")
-            return CNPJResponse(
-                cnpj=cnpj_doc.get('cnpj_formatado', data.cnpj),
-                nome=cnpj_doc.get('razao_social', 'Empresa MEI'),
-                situacao='ATIVA' if cnpj_doc.get('situacao_cadastral') == '02' else 'INATIVA'
-            )
-    except Exception as e:
-        logger.error(f"Erro ao consultar subset: {e}")
+    # PASSO 3: FALLBACK - Mockado
+    logger.info(f"[MOCKADO] Usando fallback para {cnpj_limpo}")
     
-    # CAMADA 2: Buscar no CACHE (CNPJs já consultados anteriormente)
-    try:
-        cache_doc = await db.cnpjs_cache.find_one(
-            {'cnpj_raw': cnpj_limpo},
-            {'_id': 0}
-        )
-        
-        if cache_doc:
-            # Verificar se cache não está muito antigo (opcional: 30 dias)
-            cache_age_days = (datetime.now(timezone.utc) - datetime.fromisoformat(cache_doc['cached_at'])).days
-            
-            if cache_age_days < 30:  # Cache válido por 30 dias
-                logger.info(f"[CACHE HIT] CNPJ {cnpj_limpo} encontrado no cache ({cache_age_days}d)")
-                
-                # Atualizar contador de hits
-                await db.cnpjs_cache.update_one(
-                    {'cnpj_raw': cnpj_limpo},
-                    {'$inc': {'hit_count': 1}, '$set': {'last_accessed': datetime.now(timezone.utc).isoformat()}}
-                )
-                
-                return CNPJResponse(
-                    cnpj=cache_doc.get('cnpj_formatado', data.cnpj),
-                    nome=cache_doc.get('razao_social', 'Empresa MEI'),
-                    situacao=cache_doc.get('situacao', 'ATIVA')
-                )
-    except Exception as e:
-        logger.error(f"Erro ao consultar cache: {e}")
-    
-    # CAMADA 3: Consultar API EXTERNA (backup)
-    logger.info(f"[API EXTERNA] CNPJ {cnpj_limpo} não encontrado localmente, consultando API...")
-    
-    try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            response = await client.get(
-                f"https://app-site-s2p-bff-prod.azurewebsites.net/v2/ReceitaFederal/{cnpj_limpo}"
-            )
-            
-            if response.status_code == 200:
-                api_data = response.json()
-                if api_data.get('ResponseDetail'):
-                    detail = api_data['ResponseDetail']
-                    
-                    # SALVAR NO CACHE para próxima consulta ser rápida
-                    cache_doc = {
-                        'cnpj_raw': cnpj_limpo,
-                        'cnpj_formatado': detail.get('cnpj', data.cnpj),
-                        'razao_social': detail.get('nome', 'Empresa MEI'),
-                        'situacao': detail.get('situacao', 'ATIVA'),
-                        'fonte': 'api_externa',
-                        'cached_at': datetime.now(timezone.utc).isoformat(),
-                        'last_accessed': datetime.now(timezone.utc).isoformat(),
-                        'hit_count': 0
-                    }
-                    
-                    try:
-                        await db.cnpjs_cache.insert_one(cache_doc)
-                        logger.info(f"[CACHE SAVE] CNPJ {cnpj_limpo} salvo no cache")
-                    except Exception as e:
-                        logger.warning(f"Erro ao salvar cache: {e}")
-                    
-                    return CNPJResponse(
-                        cnpj=detail.get('cnpj', data.cnpj),
-                        nome=detail.get('nome', 'Empresa MEI'),
-                        situacao=detail.get('situacao', 'ATIVA')
-                    )
-    except Exception as e:
-        logger.warning(f"[API EXTERNA] Falhou: {e}")
-    
-    # CAMADA 4: FALLBACK - Mockado genérico
     ultimos_digitos = cnpj_limpo[-4:] if len(cnpj_limpo) >= 4 else "0001"
-    logger.info(f"[MOCKADO] CNPJ {cnpj_limpo} - usando fallback genérico")
-    
-    # Salvar fallback no cache também
-    cache_doc = {
-        'cnpj_raw': cnpj_limpo,
-        'cnpj_formatado': data.cnpj,
-        'razao_social': f"EMPRESA MEI {ultimos_digitos} LTDA",
-        'situacao': 'ATIVA',
-        'fonte': 'mockado',
-        'cached_at': datetime.now(timezone.utc).isoformat(),
-        'last_accessed': datetime.now(timezone.utc).isoformat(),
-        'hit_count': 0
-    }
-    
-    try:
-        await db.cnpjs_cache.insert_one(cache_doc)
-    except Exception:
-        pass  # Ignorar se já existe
     
     return CNPJResponse(
         cnpj=data.cnpj,
