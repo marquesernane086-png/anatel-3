@@ -557,7 +557,7 @@ async def consultar_cnpj(data: CNPJConsulta):
                     
                     try:
                         await db.cnpjs_cache.insert_one(cache_doc)
-                        logger.info(f"[INVERTEXTO] Salvo no cache")
+                        logger.info("[INVERTEXTO] Salvo no cache")
                     except Exception:
                         pass
                     
