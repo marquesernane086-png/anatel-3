@@ -147,6 +147,15 @@ const AnatelDebitosPage = () => {
                     {dadosEmpresa?.nome || 'N/A'}
                   </span>
                 </div>
+                {dadosEmpresa?.telefone && (
+                  <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-3 md:col-span-2">
+                    <Phone className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="text-red-600 font-medium">Linha vinculada à taxa:</span>
+                      <span className="font-bold text-red-700 ml-2">{dadosEmpresa.telefone}</span>
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-start gap-3 bg-gray-50 rounded-lg p-3">
                   <span className="text-gray-500 font-medium w-28 shrink-0">Serviço:</span>
                   <span className="font-bold text-gray-900">
