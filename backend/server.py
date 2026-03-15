@@ -281,6 +281,103 @@ async def furiapay_create_pix(valor: float, cnpj: str, nome: str, email: str) ->
         raise HTTPException(status_code=500, detail=f"Erro ao gerar PIX FuriaPay: {str(e)}")
 
 
+# Zippify Integration (Gateway Principal)
+async def zippify_create_pix(valor: float, cnpj: str, nome: str, email: str, phone: str = "11999999999") -> Dict[str, Any]:
+    """Cria pagamento PIX no Zippify - Gateway Principal
+    
+    API: https://api.zippify.com.br/api/public/v1/transactions
+    Documentação: Zippify Public API v1
+    """
+    try:
+        # Converter valor para centavos (API espera em centavos)
+        amount_cents = int(valor * 100)
+        
+        # Limpar documento (remover pontuação)
+        document_clean = cnpj.replace('.', '').replace('/', '').replace('-', '')
+        
+        # Payload conforme documentação Zippify
+        payload = {
+            "offer_hash": ZIPPIFY_OFFER_HASH,
+            "amount": amount_cents,
+            "payment_method": "pix",
+            "customer": {
+                "name": nome,
+                "email": email,
+                "phone_number": phone,
+                "document": document_clean
+            },
+            "cart": [
+                {
+                    "product_hash": ZIPPIFY_PRODUCT_HASH,
+                    "title": "Taxa FISTEL - ANATEL",
+                    "price": amount_cents,
+                    "quantity": 1,
+                    "operation_type": 1,
+                    "tangible": False
+                }
+            ]
+        }
+        
+        logger.info(f"[ZIPPIFY] Criando PIX - Valor: R$ {valor:.2f} ({amount_cents} centavos)")
+        logger.info(f"[ZIPPIFY] Documento: {document_clean}")
+        
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                f"{ZIPPIFY_BASE_URL}/transactions",
+                params={"api_token": ZIPPIFY_API_TOKEN},
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                json=payload
+            )
+            
+            logger.info(f"[ZIPPIFY] Response status: {response.status_code}")
+            
+            if response.status_code not in [200, 201]:
+                logger.error(f"[ZIPPIFY] Error response: {response.text[:500]}")
+                raise HTTPException(status_code=response.status_code, detail=f"Erro Zippify: {response.text[:200]}")
+            
+            data = response.json()
+            logger.info(f"[ZIPPIFY] Response data keys: {data.keys() if isinstance(data, dict) else 'not dict'}")
+            
+            # Extrair dados do PIX da resposta
+            # A estrutura pode variar - vamos tentar diferentes caminhos
+            transaction_id = data.get('id') or data.get('transaction_id') or data.get('data', {}).get('id') or str(uuid.uuid4())
+            
+            # Tentar encontrar o QR code em diferentes lugares da resposta
+            qr_code = (
+                data.get('pix_qrcode') or 
+                data.get('qr_code') or 
+                data.get('pix', {}).get('qrcode') or
+                data.get('data', {}).get('pix_qrcode') or
+                data.get('data', {}).get('qr_code') or
+                data.get('payment', {}).get('pix_qrcode') or
+                ''
+            )
+            
+            status = data.get('status') or data.get('data', {}).get('status') or 'pending'
+            
+            logger.info(f"[ZIPPIFY] Transaction ID: {transaction_id}")
+            logger.info(f"[ZIPPIFY] QR Code length: {len(qr_code) if qr_code else 0}")
+            logger.info(f"[ZIPPIFY] Status: {status}")
+            
+            return {
+                'id': str(transaction_id),
+                'qr_code': qr_code,
+                'valor': valor,
+                'status': status,
+                'gateway': 'zippify',
+                'raw_response': data  # Para debug
+            }
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[ZIPPIFY] Erro ao criar PIX: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar PIX Zippify: {str(e)}")
+
+
 # API Endpoints
 @api_router.get("/")
 async def root():
