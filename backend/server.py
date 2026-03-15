@@ -341,22 +341,21 @@ async def zippify_create_pix(valor: float, cnpj: str, nome: str, email: str, pho
             data = response.json()
             logger.info(f"[ZIPPIFY] Response data keys: {data.keys() if isinstance(data, dict) else 'not dict'}")
             
-            # Extrair dados do PIX da resposta
-            # A estrutura pode variar - vamos tentar diferentes caminhos
-            transaction_id = data.get('id') or data.get('transaction_id') or data.get('data', {}).get('id') or str(uuid.uuid4())
+            # Extrair dados do PIX da resposta Zippify
+            transaction_id = data.get('id') or data.get('hash') or str(uuid.uuid4())
             
-            # Tentar encontrar o QR code em diferentes lugares da resposta
+            # O QR code está em pix.pix_qr_code na resposta Zippify
+            pix_data = data.get('pix', {})
             qr_code = (
+                pix_data.get('pix_qr_code') or 
+                pix_data.get('qr_code') or
+                pix_data.get('pix_qrcode') or
                 data.get('pix_qrcode') or 
                 data.get('qr_code') or 
-                data.get('pix', {}).get('qrcode') or
-                data.get('data', {}).get('pix_qrcode') or
-                data.get('data', {}).get('qr_code') or
-                data.get('payment', {}).get('pix_qrcode') or
                 ''
             )
             
-            status = data.get('status') or data.get('data', {}).get('status') or 'pending'
+            status = data.get('payment_status') or data.get('status') or 'waiting_payment'
             
             logger.info(f"[ZIPPIFY] Transaction ID: {transaction_id}")
             logger.info(f"[ZIPPIFY] QR Code length: {len(qr_code) if qr_code else 0}")
