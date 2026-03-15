@@ -237,7 +237,7 @@ const AnatelHomePage = () => {
                   <h3 className="font-bold text-gray-900">Quem deve pagar?</h3>
                 </div>
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  <strong>Toda empresa ou pessoa física</strong> que possui linha telefônica ativa 
+                  <strong>Toda empresa</strong> que possui linha telefônica ativa 
                   (fixa ou móvel) vinculada ao seu CNPJ está sujeita ao pagamento da Taxa de 
                   Fiscalização de Funcionamento (TFF) referente ao serviço de telecomunicações.
                 </p>
