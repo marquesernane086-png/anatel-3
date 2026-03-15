@@ -292,7 +292,7 @@ const AnatelDebitosPage = () => {
                 <div className="text-sm text-blue-900">
                   <p className="font-bold mb-2">Sobre o FISTEL – Fundo de Fiscalização das Telecomunicações</p>
                   <ul className="space-y-1 text-blue-800">
-                    <li>• A <strong>TFF (Taxa de Fiscalização de Funcionamento)</strong> é cobrada anualmente de toda pessoa física ou jurídica que possui linha telefônica ativa vinculada ao seu documento.</li>
+                    <li>• A <strong>TFF (Taxa de Fiscalização de Funcionamento)</strong> é cobrada anualmente de toda empresa que possui linha telefônica ativa vinculada ao seu CNPJ.</li>
                     <li>• O <strong>não pagamento</strong> implica em suspensão da linha, bloqueio do serviço e inscrição em dívida ativa.</li>
                     <li>• Base legal: <strong>Lei nº 9.472/1997</strong> (Lei Geral de Telecomunicações) e <strong>Lei nº 9.998/2000</strong> (FISTEL).</li>
                   </ul>
