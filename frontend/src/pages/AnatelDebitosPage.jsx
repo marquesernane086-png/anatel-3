@@ -9,7 +9,7 @@ import AnatelFooter from '@/components/AnatelFooter';
 import {
   AlertTriangle, DollarSign, Calendar, CheckCircle2,
   XCircle, Shield, Clock, Radio, Building2, FileWarning,
-  Info, ChevronDown, ChevronUp
+  Info, ChevronDown, ChevronUp, Phone
 } from 'lucide-react';
 import { toast } from 'sonner';
 
