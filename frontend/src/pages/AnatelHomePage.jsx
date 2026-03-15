@@ -27,7 +27,7 @@ const AnatelHomePage = () => {
     const cnpjLimpo = cnpj.replace(/\D/g, '');
 
     if (!cnpjLimpo || cnpjLimpo.length < 11) {
-      toast.error('Por favor, digite um CNPJ ou CPF válido');
+      toast.error('Por favor, digite um CNPJ válido');
       return;
     }
 
@@ -108,14 +108,14 @@ const AnatelHomePage = () => {
                   Consultar Situação FISTEL
                 </h2>
                 <p className="text-gray-500 text-sm mb-4">
-                  Digite o CNPJ ou CPF para verificar débitos pendentes
+                  Digite o CNPJ para verificar débitos pendentes
                 </p>
 
                 {!showResult ? (
                   <div className="space-y-3">
                     <div>
                       <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wide">
-                        CNPJ / CPF
+                        CNPJ
                       </label>
                       <Input
                         type="text"
@@ -199,7 +199,7 @@ const AnatelHomePage = () => {
                       onClick={() => { setShowResult(false); setCnpj(''); setDadosEmpresa(null); }}
                       className="w-full text-gray-500 text-xs hover:text-gray-700 hover:underline transition-colors cursor-pointer"
                     >
-                      Consultar outro CNPJ/CPF
+                      Consultar outro CNPJ
                     </button>
                   </div>
                 )}
@@ -238,7 +238,7 @@ const AnatelHomePage = () => {
                 </div>
                 <p className="text-sm text-gray-600 leading-relaxed">
                   <strong>Toda empresa ou pessoa física</strong> que possui linha telefônica ativa 
-                  (fixa ou móvel) vinculada ao seu CNPJ/CPF está sujeita ao pagamento da Taxa de 
+                  (fixa ou móvel) vinculada ao seu CNPJ está sujeita ao pagamento da Taxa de 
                   Fiscalização de Funcionamento (TFF) referente ao serviço de telecomunicações.
                 </p>
               </CardContent>
