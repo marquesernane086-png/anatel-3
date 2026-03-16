@@ -181,6 +181,15 @@ export default function AnatelHomePage() {
 
             {/* ── Sidebar direita: serviços estilo ANATEL ── */}
             <aside>
+              {/* Logo ANATEL */}
+              <div className="mb-6 flex justify-center">
+                <img 
+                  src="https://customer-assets.emergentagent.com/job_lead-conversion-9/artifacts/ktf9iqob_pngwing.com.png"
+                  alt="ANATEL"
+                  className="w-40 h-auto"
+                />
+              </div>
+
               {/* Bloco "Serviços" — .servicos-em-destaque */}
               <div style={{ borderTop: '3px solid #1351B4' }} className="mb-6">
                 <div style={{ background: '#f4f4f4', borderBottom: '1px solid #e0e0e0' }} className="px-4 py-3">
