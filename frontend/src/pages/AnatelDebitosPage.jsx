@@ -72,11 +72,11 @@ export default function AnatelDebitosPage() {
                 <h3 className="text-white font-semibold text-sm uppercase tracking-wide">Dados do Contribuinte</h3>
               </div>
               <div className="p-5">
-                <div className="space-y-3">
-                  <div className="flex justify-between items-start py-2 border-b border-gray-100">
-                    <span className="text-gray-600 text-sm uppercase">Razão Social</span>
-                    <span className="text-[#071D41] font-semibold text-right max-w-[60%]">{empresa?.nome || 'N/A'}</span>
-                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-start py-2 border-b border-gray-100">
+                      <span className="text-gray-600 text-sm uppercase">Razão Social</span>
+                      <span className="text-[#071D41] font-semibold text-right max-w-[60%]">{empresa?.nome?.replace(/\s*\d{11,}$/, '') || 'N/A'}</span>
+                    </div>
                   <div className="flex justify-between items-center py-2 border-b border-gray-100">
                     <span className="text-gray-600 text-sm uppercase">CNPJ</span>
                     <span className="text-[#071D41] font-semibold">{fmtCNPJ(empresa?.cnpj)}</span>
