@@ -202,7 +202,7 @@ export default function AnatelHomePage() {
                         data-testid="btn-ver-debitos"
                         onClick={() => navigate('/anatel/debitos', { state: { dadosEmpresa: empresa } })}
                         className="w-full flex items-center justify-center gap-3 text-white font-bold text-lg px-8 py-4 cursor-pointer transition-colors hover:opacity-90 rounded-lg"
-                        style={{ background: '#1351B4' }}
+                        style={{ background: '#00A859' }}
                       >
                         Ver Débitos e Regularizar
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
