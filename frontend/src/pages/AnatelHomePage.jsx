@@ -179,58 +179,15 @@ export default function AnatelHomePage() {
               </div>
             </div>
 
-            {/* ── Sidebar direita: serviços estilo ANATEL ── */}
+            {/* ── Sidebar direita ── */}
             <aside>
               {/* Logo ANATEL */}
-              <div className="mb-6 flex justify-center">
+              <div className="flex justify-center">
                 <img 
                   src="https://customer-assets.emergentagent.com/job_lead-conversion-9/artifacts/ktf9iqob_pngwing.com.png"
                   alt="ANATEL"
                   className="w-40 h-auto"
                 />
-              </div>
-
-              {/* Bloco "Serviços" — .servicos-em-destaque */}
-              <div style={{ borderTop: '3px solid #1351B4' }} className="mb-6">
-                <div style={{ background: '#f4f4f4', borderBottom: '1px solid #e0e0e0' }} className="px-4 py-3">
-                  <h3 className="font-black text-[14px] text-[#1351B4] uppercase tracking-wider">Serviços</h3>
-                </div>
-                <ul className="divide-y divide-gray-200">
-                  {[
-                    { cat: 'Taxas', titulo: 'Consultar e Pagar Débitos FISTEL' },
-                    { cat: 'Autorizações', titulo: 'Obter Autorização para SLP' },
-                    { cat: 'Consumidor', titulo: 'Registrar Reclamação contra Operadora' },
-                    { cat: 'Homologação', titulo: 'Certificar Equipamento Telecomunicações' },
-                  ].map(s => (
-                    <li key={s.titulo} className="bg-white hover:bg-[#f0f5ff] transition-colors">
-                      <a href="#" className="block px-4 py-3">
-                        <p className="text-[#1351B4] text-[10px] font-bold uppercase tracking-wider mb-0.5">{s.cat}</p>
-                        <p className="text-[#333] text-[13px] font-medium leading-snug">{s.titulo}</p>
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-                <div style={{ background: '#1351B4' }} className="px-4 py-2">
-                  <a href="#" className="text-white font-bold text-[12px] uppercase tracking-wider hover:underline">Mais Serviços</a>
-                </div>
-              </div>
-
-              {/* Atendimento */}
-              <div style={{ borderTop: '3px solid #1351B4', background: '#f4f4f4', border: '1px solid #e0e0e0' }}>
-                <div style={{ background: '#1351B4' }} className="px-4 py-3">
-                  <h3 className="font-bold text-[13px] text-white uppercase tracking-wider">Atendimento</h3>
-                </div>
-                <div className="p-4">
-                  <p className="text-[#1351B4] font-black text-[20px]">0800 728 9998</p>
-                  <p className="text-gray-500 text-[11px] mt-0.5 mb-3">Seg. a Sex. — 8h às 20h (gratuito)</p>
-                  <ul className="space-y-1.5">
-                    {['Fale Conosco', 'Ouvidoria', 'Canais de Atendimento'].map(c => (
-                      <li key={c}>
-                        <a href="#" className="text-[#1351B4] text-[13px] hover:underline">› {c}</a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
               </div>
             </aside>
           </div>
