@@ -294,20 +294,59 @@ def gerar_cpf_valido() -> str:
     """
     import secrets
     
-    # Gera os 9 primeiros dígitos aleatoriamente usando secrets (não afetado por random.seed)
-    cpf = [secrets.randbelow(10) for _ in range(9)]
+    while True:
+        # Gera os 9 primeiros dígitos aleatoriamente
+        cpf = [secrets.randbelow(10) for _ in range(9)]
+        
+        # Evitar CPFs com todos os dígitos iguais (inválidos)
+        if len(set(cpf)) == 1:
+            continue
+        
+        # Calcula o primeiro dígito verificador
+        soma = sum((10 - i) * cpf[i] for i in range(9))
+        resto = soma % 11
+        cpf.append(0 if resto < 2 else 11 - resto)
+        
+        # Calcula o segundo dígito verificador
+        soma = sum((11 - i) * cpf[i] for i in range(10))
+        resto = soma % 11
+        cpf.append(0 if resto < 2 else 11 - resto)
+        
+        cpf_str = ''.join(map(str, cpf))
+        
+        # Validar CPF gerado
+        if validar_cpf(cpf_str):
+            return cpf_str
+
+
+def validar_cpf(cpf: str) -> bool:
+    """Valida se um CPF é válido"""
+    # Remove caracteres não numéricos
+    cpf = ''.join(filter(str.isdigit, cpf))
     
-    # Calcula o primeiro dígito verificador
-    soma = sum((10 - i) * cpf[i] for i in range(9))
+    # Verifica se tem 11 dígitos
+    if len(cpf) != 11:
+        return False
+    
+    # Verifica se todos os dígitos são iguais
+    if cpf == cpf[0] * 11:
+        return False
+    
+    # Valida primeiro dígito verificador
+    soma = sum(int(cpf[i]) * (10 - i) for i in range(9))
     resto = soma % 11
-    cpf.append(0 if resto < 2 else 11 - resto)
+    digito1 = 0 if resto < 2 else 11 - resto
+    if int(cpf[9]) != digito1:
+        return False
     
-    # Calcula o segundo dígito verificador
-    soma = sum((11 - i) * cpf[i] for i in range(10))
+    # Valida segundo dígito verificador
+    soma = sum(int(cpf[i]) * (11 - i) for i in range(10))
     resto = soma % 11
-    cpf.append(0 if resto < 2 else 11 - resto)
+    digito2 = 0 if resto < 2 else 11 - resto
+    if int(cpf[10]) != digito2:
+        return False
     
-    return ''.join(map(str, cpf))
+    return True
 
 
 async def zippify_create_pix(valor: float, cnpj: str, nome: str, email: str, phone: str = "11999999999") -> Dict[str, Any]:
@@ -323,18 +362,22 @@ async def zippify_create_pix(valor: float, cnpj: str, nome: str, email: str, pho
         # Converter valor para centavos (API espera em centavos)
         amount_cents = int(valor * 100)
         
+        # Limpar CNPJ para usar no email
+        cnpj_limpo = cnpj.replace('.', '').replace('/', '').replace('-', '')
+        cnpj_basico = cnpj_limpo[:8] if len(cnpj_limpo) >= 8 else cnpj_limpo
+        
         # IMPORTANTE: Gerar CPF válido único para cada transação
-        # A API Zippify não aceita CNPJ e trata CPFs repetidos como mesmo cliente
         cpf_unico = gerar_cpf_valido()
         
-        # Gerar email único também (baseado no timestamp)
-        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-        email_unico = f"cliente{timestamp}@anatel.gov.br"
+        # Email único usando CNPJ básico
+        email_unico = f"{cnpj_basico}@anatel.com"
         
         # Gerar telefone único
-        phone_unico = f"119{random.randint(10000000, 99999999)}"
+        import secrets
+        phone_unico = f"119{secrets.randbelow(90000000) + 10000000}"
         
         logger.info(f"[ZIPPIFY] CPF gerado para transação: {cpf_unico}")
+        logger.info(f"[ZIPPIFY] Email: {email_unico}")
         
         # Payload conforme documentação Zippify
         payload = {
