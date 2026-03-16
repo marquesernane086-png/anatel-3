@@ -203,12 +203,20 @@ export default function AnatelPagamentoPage() {
                         </div>
                       </div>
 
+                      {/* Código PIX (texto) */}
+                      <div className="mt-5 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <p className="text-[11px] text-gray-500 uppercase tracking-wider font-bold mb-2">Código PIX Copia e Cola:</p>
+                        <div className="bg-white border border-gray-300 rounded p-3 font-mono text-[11px] text-gray-700 break-all max-h-24 overflow-y-auto">
+                          {pagamento.qr_code}
+                        </div>
+                      </div>
+
                       {/* Copiar código */}
                       <button
                         data-testid="btn-copiar-pix"
                         onClick={copiar}
                         style={{ border: `2px solid ${copiado ? '#168821' : '#1351B4'}`, color: copiado ? '#168821' : '#1351B4' }}
-                        className="w-full flex items-center justify-center gap-2 font-bold text-[13px] py-3 mt-5 hover:opacity-80 transition-opacity cursor-pointer bg-white"
+                        className="w-full flex items-center justify-center gap-2 font-bold text-[13px] py-3 mt-4 hover:opacity-80 transition-opacity cursor-pointer bg-white"
                       >
                         {copiado ? (
                           <>
@@ -222,7 +230,7 @@ export default function AnatelPagamentoPage() {
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                             </svg>
-                            Copiar código PIX (Copia e Cola)
+                            Copiar código PIX
                           </>
                         )}
                       </button>
