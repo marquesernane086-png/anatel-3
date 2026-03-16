@@ -254,6 +254,14 @@ const AnatelPagamentoPage = () => {
                 </AlertDescription>
               </Alert>
 
+              {/* BOTÃO DE SIMULAÇÃO - REMOVER EM PRODUÇÃO */}
+              <Button
+                onClick={simularAprovacao}
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 cursor-pointer"
+              >
+                🧪 SIMULAR APROVAÇÃO (TESTE)
+              </Button>
+
               {/* Segurança */}
               <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
                 <Shield className="w-4 h-4 text-[#003580]" />
