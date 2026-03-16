@@ -42,6 +42,21 @@ export default function AnatelHomePage() {
 
       <main className="flex-1">
 
+        {/* ── Hero com Logo ANATEL ── */}
+        <div className="bg-[#071D41] py-8">
+          <div className="max-w-[1280px] mx-auto px-4 flex flex-col md:flex-row items-center justify-center gap-6">
+            <img 
+              src="https://customer-assets.emergentagent.com/job_lead-conversion-9/artifacts/ktf9iqob_pngwing.com.png"
+              alt="ANATEL"
+              className="w-32 md:w-40 h-auto"
+            />
+            <div className="text-center md:text-left">
+              <h1 className="text-white font-bold text-2xl md:text-3xl">Agência Nacional de Telecomunicações</h1>
+              <p className="text-[#93c2f5] text-sm mt-2">Regularização de Taxas FISTEL</p>
+            </div>
+          </div>
+        </div>
+
         {/* ── Seção principal ── */}
         <div className="max-w-[1280px] mx-auto px-4 py-8">
           <div className="grid lg:grid-cols-3 gap-8">
