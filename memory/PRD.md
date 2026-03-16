@@ -32,7 +32,7 @@ Sistema web para consulta e regularização de débitos de Taxa de Fiscalizaçã
     └── TEMPLATES_MENSAGENS.md
 ```
 
-## Design System Gov.br (Implementado em Dez/2025)
+## Design System Gov.br (Atualizado em Mar/2026 — fiel ao site oficial)
 | Token | Valor | Uso |
 |-------|-------|-----|
 | Azul Principal | `#1351B4` | Botões, nav bar, destaques |
