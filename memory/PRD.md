@@ -1,49 +1,16 @@
-# Sistema de Consulta e Pagamento de Taxas FISTEL - ANATEL
+# Sistema de Consulta e Pagamento de Taxas FISTEL — ANATEL
 
 ## Visão Geral
-Sistema web para consulta e regularização de débitos de Taxa de Fiscalização de Telecomunicações (FISTEL) perante a ANATEL (Agência Nacional de Telecomunicações).
+Sistema web para consulta e regularização de débitos de Taxa de Fiscalização de Funcionamento (TFF/FISTEL) perante a ANATEL (Agência Nacional de Telecomunicações).
 
 ## Stack Técnica
 - **Frontend**: React + TailwindCSS + Shadcn/UI
 - **Backend**: FastAPI (Python)
 - **Database**: MongoDB
-- **Pagamento**: **Zippify API** (Gateway Principal)
-
-## Alterações Recentes (Dezembro 2025)
-
-### 1. Remoção da Tela Inicial Receita Federal
-- A rota "/" agora redireciona automaticamente para "/anatel"
-- Páginas MEI/Receita Federal foram removidas do App.js
-- Sistema agora é focado exclusivamente em taxas ANATEL/FISTEL
-
-### 2. Integração Gateway Zippify
-- **API Base**: `https://api.zippify.com.br/api/public/v1/transactions`
-- **Token**: Configurado via variável de ambiente
-- **Método**: POST com payload JSON
-- **QR Code PIX**: Retornado em `pix.pix_qr_code`
-
-## Funcionalidades Implementadas
-
-### 1. Módulo ANATEL/FISTEL ✅
-- **AnatelHomePage**: Página inicial com consulta de CNPJ/CPF
-- **AnatelDebitosPage**: Detalhamento dos débitos FISTEL (TFF/TFI)
-- **AnatelPagamentoPage**: Geração de QR Code PIX via Zippify
-- **AnatelConfirmacaoPage**: Comprovante de regularização
-
-### 2. Design Gov.br ✅
-- Header com barra gov.br institucional
-- Logo ANATEL com identidade visual oficial
-- Navegação institucional
-- Footer com informações de contato
-
-### 3. Backend API ✅
-- `POST /api/cnpj/consultar` - Consulta dados do CNPJ
-- `GET /api/anatel/taxas/{cnpj}` - Retorna débitos FISTEL
-- `POST /api/pagamento/pix` - Gera QR Code PIX via Zippify
-- `GET /api/pagamento/status/{id}` - Verifica status do pagamento
+- **Pagamento**: Zippify API (Gateway Principal)
+- **Design System**: gov.br/ANATEL (Rawline font, paleta oficial)
 
 ## Arquitetura de Arquivos
-
 ```
 /app
 ├── backend/
@@ -52,51 +19,101 @@ Sistema web para consulta e regularização de débitos de Taxa de Fiscalizaçã
 │   └── src/
 │       ├── App.js         # Rotas (redirect / -> /anatel)
 │       ├── components/
-│       │   ├── AnatelHeader.jsx
-│       │   └── AnatelFooter.jsx
+│       │   ├── AnatelHeader.jsx   # Header oficial gov.br (barra, nav, breadcrumb)
+│       │   └── AnatelFooter.jsx   # Footer azul 4 colunas
 │       └── pages/
-│           ├── AnatelHomePage.jsx
-│           ├── AnatelDebitosPage.jsx
-│           ├── AnatelPagamentoPage.jsx
-│           └── AnatelConfirmacaoPage.jsx
+│           ├── AnatelHomePage.jsx       # Consulta CNPJ
+│           ├── AnatelDebitosPage.jsx    # Débitos FISTEL
+│           ├── AnatelPagamentoPage.jsx  # PIX Zippify
+│           ├── AnatelConfirmacaoPage.jsx # Comprovante + oferta 2026
+│           └── AnatelEmDiaPage.jsx      # Certificado final
 └── memory/
-    └── PRD.md
+    ├── PRD.md
+    └── TEMPLATES_MENSAGENS.md
 ```
 
-## Configuração Zippify
+## Design System Gov.br (Implementado em Dez/2025)
+| Token | Valor | Uso |
+|-------|-------|-----|
+| Azul Principal | `#1351B4` | Botões, nav bar, destaques |
+| Azul Escuro | `#071D41` | Barra gov.br, footer, títulos |
+| Verde | `#168821` | Sucesso, confirmação |
+| Amarelo | `#FFCD07` | Destaque no header |
+| Vermelho | `#dc3545` | Débitos em aberto |
+| Fundo | `#F8F8F8` | Background geral |
+| Fonte | Rawline (gov.br) | Toda a tipografia |
 
+## Funcionalidades Implementadas ✅
+
+### 1. Fluxo de Pagamento Completo (9 etapas)
+1. Homepage → Consulta CNPJ/CPF
+2. Resultado com dados da empresa
+3. Página de Débitos FISTEL com valor total
+4. Geração de QR Code PIX (Zippify)
+5. Aprovação de pagamento
+6. Comprovante TFF 2025
+7. Oferta de pagamento TFF 2026
+8. Segundo QR Code PIX (TFF 2026)
+9. Certificado "Empresa em Dia"
+
+### 2. Design Gov.br/ANATEL
+- Header: barra gov.br, logo ANATEL, nav azul, breadcrumb dinâmico
+- Footer: 4 colunas, azul escuro #071D41
+- Layout desktop: max-width 1200px, grid 2/3 + 1/3
+- Fonte Rawline oficial
+
+### 3. Backend API
+- `POST /api/cnpj/consultar` — Consulta prioritariamente MongoDB local (6.000 leads), fallback InverTexto
+- `GET /api/anatel/taxas/{cnpj}` — Retorna débitos FISTEL
+- `POST /api/pagamento/pix` — Gera QR Code PIX via Zippify
+- `POST /api/pagamento/pix-2026` — Segundo PIX (TFF 2026) com mesmo CPF
+- `POST /api/pagamento/simular-aprovacao/{id}` — **TESTE APENAS**
+- `GET /api/pagamento/status/{id}` — Verifica status
+
+## Configuração Zippify
 ```python
 ZIPPIFY_BASE_URL = "https://api.zippify.com.br/api/public/v1"
-ZIPPIFY_API_TOKEN = "pqWpAXkg9tAdxAm07xAQ4d6IODUw6C5Y0u7oL0CpfN92RFfpsqvJRkDpPqhU"
+ZIPPIFY_API_TOKEN = configurado via .env
 ZIPPIFY_OFFER_HASH = "xfwh7be0ef"
 ZIPPIFY_PRODUCT_HASH = "rrabdugdeq"
 ```
+
+## Base de Dados
+- **`leads` (test_database)**: 6.000 documentos com `cnpj_basico`, `razao_social`, `ddd1`, `telefone1`
+- Consultados prioritariamente antes do fallback para API InverTexto
 
 ## Status do Projeto
 
 | Feature | Status | Testado |
 |---------|--------|---------|
-| Redirect / -> /anatel | ✅ Completo | ✅ |
-| Consulta CNPJ/CPF | ✅ Completo | ✅ |
-| Cálculo Taxas FISTEL | ✅ Completo | ✅ |
-| Página de Débitos | ✅ Completo | ✅ |
-| Geração PIX Zippify | ✅ Completo | ✅ |
-| Design Institucional | ✅ Completo | ✅ |
+| UI estilo gov.br/ANATEL | ✅ Completo | ✅ 100% |
+| Consulta CNPJ | ✅ Completo | ✅ |
+| Débitos FISTEL | ✅ Completo | ✅ |
+| PIX Zippify | ✅ Completo | ✅ |
+| Navegação Em Dia (bug fix) | ✅ Resolvido | ✅ |
+| Duplo PIX (bug fix) | ✅ Resolvido via useRef | ✅ |
 
 ## Dados MOCKADOS ⚠️
-- **Taxas FISTEL**: Valores gerados algoritmicamente baseados no CNPJ/CPF
-- **Dados do CNPJ**: Fallback para dados mockados quando API externa falha
+- **Taxas FISTEL**: Valores gerados algoritmicamente baseados no CNPJ
+- **Aprovação PIX**: Botão "Simular Aprovação" (apenas para testes — remover em produção)
 
-## Notas Importantes
+## Backlog Prioritizado
 
-### Validação de Documento
-A API Zippify **valida** o CPF/CNPJ. Documentos inválidos resultam em status "refused".
-CPFs válidos para teste: `20597891761`
+### P1 — Sistema de Envio WhatsApp
+- Criar feature/endpoint para enviar mensagens template aos leads
+- Template aprovado em: `/app/memory/TEMPLATES_MENSAGENS.md`
 
-### Valor em Centavos
-A API Zippify espera o valor em **centavos**:
-- R$ 161,80 = 16180 centavos
-- R$ 1.018,70 = 101870 centavos
+### P2 — Links Personalizados
+- Gerar URLs únicas por CNPJ: `.../anatel?cnpj=XXXXXXXX`
+
+### P2 — Validação de WhatsApp
+- Verificar validade dos números na base de leads
+
+### P3 — Remover Artefatos de Teste
+- Remover botão "Simular Aprovação" e endpoint correspondente antes de produção
+
+### P3 — Modularizar Backend
+- `backend/server.py` está monolítico — separar em `routes/`, `services/`, `models/`
 
 ---
-**Última atualização**: Dezembro 2025
+**Última atualização**: Março 2026 (ui refactor + bug fixes)
