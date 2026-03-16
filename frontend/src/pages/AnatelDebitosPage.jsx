@@ -63,11 +63,11 @@ export default function AnatelDebitosPage() {
       </div>
 
       <main className="flex-1 py-8 pb-32">
-        <div className="max-w-[1280px] mx-auto px-4">
-          <div className="grid lg:grid-cols-3 gap-8">
+        <div className="max-w-[900px] mx-auto px-4">
+          <div className="space-y-5">
 
             {/* Coluna principal */}
-            <div className="lg:col-span-2 space-y-5">
+            <div className="space-y-5">
 
               {/* Dados do Contribuinte */}
               <div>
