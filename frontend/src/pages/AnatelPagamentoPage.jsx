@@ -238,10 +238,6 @@ export default function AnatelPagamentoPage() {
                   )}
                 </div>
               </div>
-
-              {/* Simulação — teste */}
-              {pagamento && (
-              )}
             </div>
 
             {/* Sidebar */}
