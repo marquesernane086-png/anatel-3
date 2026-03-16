@@ -64,6 +64,30 @@ const AnatelPagamentoPage = () => {
     }
   };
 
+  // APENAS PARA TESTES - Simular aprovação do PIX
+  const simularAprovacao = async () => {
+    if (!pagamento?.id) return;
+    
+    try {
+      await axios.post(`${API}/pagamento/simular-aprovacao/${pagamento.id}`);
+      toast.success('Pagamento simulado como aprovado!');
+      
+      // Redirecionar para confirmação
+      setTimeout(() => {
+        navigate('/anatel/confirmacao', {
+          state: {
+            valor: taxas.total,
+            cnpj: dadosEmpresa.cnpj,
+            dadosEmpresa: dadosEmpresa
+          }
+        });
+      }, 1000);
+    } catch (error) {
+      console.error('Erro ao simular aprovação:', error);
+      toast.error('Erro ao simular aprovação');
+    }
+  };
+
   const iniciarMonitoramento = (transactionId) => {
     const interval = setInterval(async () => {
       try {
@@ -77,7 +101,8 @@ const AnatelPagamentoPage = () => {
             navigate('/anatel/confirmacao', {
               state: {
                 valor: taxas.total,
-                cnpj: dadosEmpresa.cnpj
+                cnpj: dadosEmpresa.cnpj,
+                dadosEmpresa: dadosEmpresa
               }
             });
           }, 1500);
