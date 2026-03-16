@@ -787,6 +787,92 @@ async def verificar_status(transaction_id: str):
     
     return transaction
 
+# Webhook Zippify - Recebe notificações de pagamento
+@api_router.post("/webhook/zippify")
+async def webhook_zippify(request: dict):
+    """Webhook para receber notificações de pagamento da Zippify
+    
+    Configure na Zippify:
+    - URL de Postback: https://seu-dominio.com/api/webhook/zippify
+    - Métodos de Pagamento: PIX
+    - Status do Pagamento: Pago
+    """
+    try:
+        logger.info(f"[WEBHOOK ZIPPIFY] Recebido: {request}")
+        
+        # Extrair dados do webhook
+        transaction_id = str(request.get('id') or request.get('transaction_id') or request.get('hash', ''))
+        payment_status = request.get('payment_status') or request.get('status', '')
+        
+        logger.info(f"[WEBHOOK ZIPPIFY] Transaction ID: {transaction_id}, Status: {payment_status}")
+        
+        if not transaction_id:
+            logger.warning("[WEBHOOK ZIPPIFY] Transaction ID não encontrado no payload")
+            return {"status": "error", "message": "Transaction ID not found"}
+        
+        # Mapear status da Zippify
+        status_map = {
+            'paid': 'paid',
+            'pago': 'paid',
+            'approved': 'paid',
+            'confirmed': 'paid',
+            'waiting_payment': 'waiting_payment',
+            'aguardando pagamento': 'waiting_payment',
+            'pending': 'waiting_payment',
+            'expired': 'expired',
+            'cancelled': 'cancelled',
+            'cancelado': 'cancelled',
+            'refunded': 'refunded',
+            'reembolsado': 'refunded'
+        }
+        
+        normalized_status = status_map.get(payment_status.lower(), payment_status)
+        
+        # Buscar transação no banco
+        transaction = await db.transactions.find_one({'id': transaction_id})
+        
+        if not transaction:
+            # Tentar buscar por hash
+            transaction = await db.transactions.find_one({'hash': transaction_id})
+        
+        if transaction:
+            # Atualizar status
+            update_data = {
+                'status': normalized_status,
+                'updated_at': datetime.now(timezone.utc).isoformat()
+            }
+            
+            if normalized_status == 'paid':
+                update_data['paid_at'] = datetime.now(timezone.utc).isoformat()
+                
+                # Marcar lead como pagamento realizado
+                cnpj = transaction.get('cnpj', '').replace('.', '').replace('/', '').replace('-', '')
+                if cnpj:
+                    await db.leads_anatel.update_one(
+                        {'cnpj': cnpj},
+                        {'$set': {
+                            'pagamento_realizado': True,
+                            'data_pagamento': datetime.now(timezone.utc).isoformat(),
+                            'transaction_id': transaction_id
+                        }}
+                    )
+                    logger.info(f"[WEBHOOK ZIPPIFY] Lead {cnpj} marcado como pago")
+            
+            await db.transactions.update_one(
+                {'id': transaction_id},
+                {'$set': update_data}
+            )
+            
+            logger.info(f"[WEBHOOK ZIPPIFY] Transação {transaction_id} atualizada para: {normalized_status}")
+            return {"status": "success", "transaction_id": transaction_id, "new_status": normalized_status}
+        else:
+            logger.warning(f"[WEBHOOK ZIPPIFY] Transação {transaction_id} não encontrada no banco")
+            return {"status": "not_found", "transaction_id": transaction_id}
+            
+    except Exception as e:
+        logger.error(f"[WEBHOOK ZIPPIFY] Erro: {e}")
+        return {"status": "error", "message": str(e)}
+
 # Endpoint de simulação para testes (REMOVER EM PRODUÇÃO)
 @api_router.post("/pagamento/simular-aprovacao/{transaction_id}")
 async def simular_aprovacao(transaction_id: str):
