@@ -675,11 +675,12 @@ async def obter_taxas_anatel(cnpj: str):
     seed = int(cnpj_limpo[-4:]) if cnpj_limpo else 1234
     random.seed(seed)
 
-    # Valores ajustados para total em torno de R$ 60,00
-    # Principal base entre R$ 40 e R$ 50 (com 20% de multa = R$ 48 a R$ 60)
-    valor_tff_base = round(random.uniform(45.00, 52.00), 2)
+    # Taxa fixa: Principal R$ 57,38 + Acréscimos (multa 20%)
+    valor_principal = 57.38
+    valor_acrescimos = round(valor_principal * 0.20, 2)  # R$ 11,48
+    valor_total = round(valor_principal + valor_acrescimos, 2)  # R$ 68,86
 
-    # Apenas 1 ano em atraso para manter valor baixo
+    # Apenas 1 ano em atraso
     anos_atraso = 1
 
     taxas = []
@@ -689,18 +690,14 @@ async def obter_taxas_anatel(cnpj: str):
 
     for ano in anos_referencia:
         # TFF – Taxa de Fiscalização de Funcionamento
-        principal_tff = valor_tff_base
-        acrescimos_tff = round(principal_tff * 0.20, 2)   # multa 20%
-        total_tff = round(principal_tff + acrescimos_tff, 2)
-        total_geral += total_tff
-
         taxas.append(AnatelTaxaItem(
             tipo="TFF – Taxa de Fiscalização de Funcionamento",
             periodo=f"Exercício {ano}",
-            principal=principal_tff,
-            acrescimos=acrescimos_tff,
-            total_item=total_tff
+            principal=valor_principal,
+            acrescimos=valor_acrescimos,
+            total_item=valor_total
         ))
+        total_geral += valor_total
 
     total_geral = round(total_geral, 2)
 
