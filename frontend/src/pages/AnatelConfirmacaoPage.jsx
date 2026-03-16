@@ -124,30 +124,6 @@ export default function AnatelConfirmacaoPage() {
                     <p className="text-[12px] text-[#2e7d32]">Baixa no sistema ANATEL em até 2 horas úteis</p>
                   </div>
                 </div>
-
-                {/* Ações */}
-                <div style={{ background: '#f4f4f4', borderTop: '1px solid #e0e0e0' }} className="px-6 py-4 flex flex-col sm:flex-row gap-3">
-                  <button
-                    onClick={() => window.print()}
-                    style={{ border: '2px solid #071D41', color: '#071D41' }}
-                    className="flex items-center justify-center gap-2 font-bold text-[13px] px-5 py-2.5 hover:bg-[#071D41] hover:text-white transition-colors cursor-pointer bg-white"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                    </svg>
-                    Imprimir comprovante
-                  </button>
-                  <button
-                    onClick={() => window.print()}
-                    style={{ border: '1px solid #ccc', color: '#555' }}
-                    className="flex items-center justify-center gap-2 font-medium text-[13px] px-5 py-2.5 hover:bg-gray-100 transition-colors cursor-pointer bg-white"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    Salvar comprovante
-                  </button>
-                </div>
               </div>
             </div>
 
