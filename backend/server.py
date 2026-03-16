@@ -96,6 +96,7 @@ class PagamentoRequest(BaseModel):
     nome: str
     email: Optional[str] = "contato@mei.com"
     valor: float
+    cpf_lead: Optional[str] = None  # CPF do lead (se disponível)
 
 class PagamentoRequest2026(BaseModel):
     cnpj: str
