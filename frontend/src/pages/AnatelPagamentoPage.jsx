@@ -257,21 +257,6 @@ export default function AnatelPagamentoPage() {
 
               {/* Simulação — teste */}
               {pagamento && (
-                <div style={{ border: '2px solid #fd7e14', marginTop: 16 }}>
-                  <div style={{ background: '#fff3e0', borderBottom: '1px solid #fd7e14' }} className="px-4 py-2">
-                    <p className="text-[11px] font-bold uppercase text-orange-700 tracking-wide">Ambiente de Testes — Remover em Produção</p>
-                  </div>
-                  <div className="p-4 bg-white">
-                    <button
-                      data-testid="btn-simular-aprovacao"
-                      onClick={simularAprovacao}
-                      style={{ background: '#fd7e14' }}
-                      className="w-full text-white font-bold text-[14px] py-3 hover:opacity-90 transition-opacity cursor-pointer"
-                    >
-                      Simular Aprovação de Pagamento
-                    </button>
-                  </div>
-                </div>
               )}
             </div>
 
