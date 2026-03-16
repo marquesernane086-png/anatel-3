@@ -26,9 +26,15 @@ export default function AnatelConfirmacaoPage() {
   });
 
   const pagar2026 = () => {
+    // Garantir que dadosEmpresa tem o cnpj
+    const empresaCompleta = {
+      ...dadosEmpresa,
+      cnpj: dadosEmpresa?.cnpj || cnpj
+    };
+    
     navigate('/anatel/pagamento', {
       state: {
-        dadosEmpresa,
+        dadosEmpresa: empresaCompleta,
         taxas: {
           total: valorTFF2026,
           taxas: [{
