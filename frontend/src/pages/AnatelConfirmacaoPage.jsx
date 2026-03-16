@@ -164,15 +164,6 @@ export default function AnatelConfirmacaoPage() {
                 </div>
               )}
 
-              {/* Atendimento */}
-              <div>
-                <div style={{ background: '#f4f4f4', border: '1px solid #e0e0e0' }} className="p-4">
-                  <p className="text-[#1351B4] font-black text-[16px]">0800 728 9998</p>
-                  <p className="text-gray-500 text-[11px] mb-3">Seg. a Sex. — 8h às 20h</p>
-                  <a href="#" className="text-[#1351B4] text-[13px] hover:underline block">› www.gov.br/anatel</a>
-                </div>
-              </div>
-
               {!mostrar2026 && (
                 <button
                   onClick={() => navigate('/anatel')}
