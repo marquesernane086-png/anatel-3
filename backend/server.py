@@ -807,6 +807,52 @@ async def verificar_status(transaction_id: str):
     
     return transaction
 
+# Endpoint de simulação para testes (REMOVER EM PRODUÇÃO)
+@api_router.post("/pagamento/simular-aprovacao/{transaction_id}")
+async def simular_aprovacao(transaction_id: str):
+    """APENAS PARA TESTES - Simula aprovação do PIX
+    
+    REMOVER ESTE ENDPOINT ANTES DE IR PARA PRODUÇÃO!
+    """
+    # Buscar transação
+    transaction = await db.transactions.find_one({'id': transaction_id})
+    
+    if not transaction:
+        # Tentar buscar como string
+        transaction = await db.transactions.find_one({'id': str(transaction_id)})
+    
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Transação não encontrada")
+    
+    # Atualizar status para aprovado
+    await db.transactions.update_one(
+        {'id': transaction_id},
+        {
+            '$set': {
+                'status': 'paid',
+                'paid_at': datetime.now(timezone.utc).isoformat(),
+                'updated_at': datetime.now(timezone.utc).isoformat()
+            }
+        }
+    )
+    
+    # Marcar lead como pagamento realizado
+    cnpj = transaction.get('cnpj', '').replace('.', '').replace('/', '').replace('-', '')
+    if cnpj:
+        await db.leads_anatel.update_one(
+            {'cnpj': cnpj},
+            {'$set': {'pagamento_realizado': True, 'data_pagamento': datetime.now(timezone.utc).isoformat()}}
+        )
+    
+    logger.info(f"[SIMULAÇÃO] Pagamento {transaction_id} aprovado manualmente")
+    
+    return {
+        "success": True,
+        "message": "Pagamento simulado como aprovado",
+        "transaction_id": transaction_id,
+        "status": "paid"
+    }
+
 @api_router.get("/gateway/current", response_model=GatewayResponse)
 async def get_gateway():
     """Retorna gateway ativo"""
