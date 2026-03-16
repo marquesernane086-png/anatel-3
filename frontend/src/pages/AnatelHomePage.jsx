@@ -3,245 +3,275 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import AnatelHeader from '@/components/AnatelHeader';
 import AnatelFooter from '@/components/AnatelFooter';
-import { AlertTriangle, Building2, Search, Phone, ChevronRight, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const AnatelHomePage = () => {
+/* ─────────────── helpers ─────────────── */
+const formatCNPJ = (v) => {
+  const n = v.replace(/\D/g, '');
+  if (n.length <= 11) return n.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  return n.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+};
+
+/* ─────────────── component ─────────────── */
+export default function AnatelHomePage() {
   const [cnpj, setCnpj] = useState('');
   const [loading, setLoading] = useState(false);
-  const [dadosEmpresa, setDadosEmpresa] = useState(null);
-  const [showResult, setShowResult] = useState(false);
+  const [empresa, setEmpresa] = useState(null);
   const navigate = useNavigate();
 
-  const consultarCNPJ = async () => {
-    const cnpjLimpo = cnpj.replace(/\D/g, '');
-    if (!cnpjLimpo || cnpjLimpo.length < 11) {
-      toast.error('Digite um CNPJ válido');
-      return;
-    }
+  const consultar = async () => {
+    const limpo = cnpj.replace(/\D/g, '');
+    if (!limpo || limpo.length < 11) { toast.error('Digite um CNPJ válido'); return; }
     setLoading(true);
     try {
-      const response = await axios.post(`${API}/cnpj/consultar`, { cnpj: cnpjLimpo });
-      setDadosEmpresa(response.data);
-      setShowResult(true);
-    } catch (error) {
-      console.error('Erro ao consultar CNPJ:', error);
+      const { data } = await axios.post(`${API}/cnpj/consultar`, { cnpj: limpo });
+      setEmpresa(data);
+    } catch {
       toast.error('Erro ao consultar. Tente novamente.');
     } finally {
       setLoading(false);
     }
   };
 
-  const formatarCNPJ = (valor) => {
-    const n = valor.replace(/\D/g, '');
-    if (n.length <= 11) return n.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-    return n.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
-  };
-
-  const verTaxas = () => {
-    if (dadosEmpresa) navigate('/anatel/debitos', { state: { dadosEmpresa } });
-  };
-
-  const novaConsulta = () => {
-    setCnpj('');
-    setDadosEmpresa(null);
-    setShowResult(false);
-  };
-
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8F8F8]" style={{ fontFamily: "'Rawline', 'Segoe UI', system-ui, sans-serif" }}>
-      <AnatelHeader breadcrumb="Consulta de Débitos FISTEL" />
+    <div className="min-h-screen flex flex-col bg-white" style={{ fontFamily: "'Rawline', 'Segoe UI', system-ui, sans-serif" }}>
+      <AnatelHeader breadcrumb="Consulta FISTEL" />
 
-      {/* Banner principal */}
-      <div style={{ backgroundColor: '#1351B4' }} className="w-full py-8 px-4">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="max-w-xl">
-            <p className="text-[#FFCD07] text-xs font-bold uppercase tracking-widest mb-2">
-              FISTEL Online
-            </p>
-            <h1 className="text-white text-2xl sm:text-3xl font-bold mb-2 leading-tight">
-              Consulta de Débitos FISTEL
-            </h1>
-            <p className="text-blue-200 text-sm">
-              Taxa de Fiscalização de Funcionamento — Verifique a situação do seu CNPJ junto à ANATEL.
-            </p>
+      <main className="flex-1">
+
+        {/* ── Bloco de botões estilo ANATEL (CONSUMIDOR / REGULADO / DADOS / LEGISLAÇÃO) ── */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-[1280px] mx-auto px-4 py-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label: 'CONSUMIDOR', color: '#1351B4' },
+                { label: 'REGULADO', color: '#1351B4' },
+                { label: 'DADOS', color: '#1351B4' },
+                { label: 'FISCALIZAÇÃO', color: '#1351B4' },
+              ].map(btn => (
+                <a
+                  key={btn.label}
+                  href="#"
+                  className="flex items-center justify-center font-black text-white text-[13px] uppercase tracking-wide rounded py-3 px-2 hover:opacity-90 transition-opacity"
+                  style={{ background: btn.color }}
+                >
+                  {btn.label}
+                </a>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
 
-      <main className="flex-1 py-8">
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
-          <div className="grid lg:grid-cols-3 gap-6">
+        {/* ── Seção principal ── */}
+        <div className="max-w-[1280px] mx-auto px-4 py-8">
+          <div className="grid lg:grid-cols-3 gap-8">
 
-            {/* Formulário / Resultado principal */}
+            {/* Coluna esquerda + centro: Formulário FISTEL */}
             <div className="lg:col-span-2">
-              <div className="bg-white border border-gray-200 rounded shadow-sm overflow-hidden">
-                {/* Cabeçalho do card */}
-                <div className="border-b border-gray-200 px-6 py-4 flex items-center gap-3">
-                  <FileText className="w-5 h-5 text-[#1351B4]" />
-                  <h2 className="text-[#071D41] font-bold text-base">
-                    {showResult ? 'Dados do Contribuinte' : 'Consultar CNPJ / CPF'}
-                  </h2>
+
+              {/* Título da seção (estilo .cabecalho-linha) */}
+              <div style={{ borderBottom: '3px solid #1351B4' }} className="mb-5 pb-2">
+                <h2 className="text-[#1351B4] font-black text-[19px] uppercase tracking-wide">
+                  Regularização FISTEL
+                </h2>
+              </div>
+
+              {!empresa ? (
+                /* ── Card de consulta ── */
+                <div className="border border-gray-200 bg-white p-6">
+                  <p className="text-gray-600 text-[14px] mb-5 leading-relaxed">
+                    Informe o CNPJ da empresa para verificar a existência de débitos na
+                    <strong className="text-[#1351B4]"> Taxa de Fiscalização de Funcionamento (TFF)</strong> do FISTEL.
+                  </p>
+
+                  <div className="mb-4">
+                    <label className="block text-[13px] font-bold text-[#333] mb-1.5" htmlFor="cnpj-input">
+                      CNPJ da Empresa *
+                    </label>
+                    <input
+                      id="cnpj-input"
+                      data-testid="cnpj-input"
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={18}
+                      placeholder="00.000.000/0000-00"
+                      value={cnpj}
+                      onChange={e => setCnpj(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && consultar()}
+                      className="w-full border border-gray-400 px-3 py-2.5 text-[14px] outline-none focus:border-[#1351B4] focus:ring-2 focus:ring-[#1351B4]/20"
+                      style={{ maxWidth: 400 }}
+                    />
+                  </div>
+
+                  <button
+                    data-testid="btn-consultar"
+                    onClick={consultar}
+                    disabled={loading}
+                    className="inline-flex items-center gap-2 font-bold text-[14px] text-white px-6 py-2.5 transition-colors disabled:opacity-60 cursor-pointer"
+                    style={{ background: loading ? '#6b9ed6' : '#1351B4' }}
+                  >
+                    {loading ? (
+                      <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Consultando...</>
+                    ) : (
+                      <>Consultar FISTEL</>
+                    )}
+                  </button>
                 </div>
 
-                <div className="p-6">
-                  {!showResult ? (
+              ) : (
+                /* ── Resultado da consulta ── */
+                <div data-testid="resultado-consulta">
+                  {/* Cabeçalho do contribuinte — estilo card azul */}
+                  <div style={{ background: '#1351B4' }} className="p-5 mb-4">
+                    <p className="text-[#FFCD07] text-[11px] font-bold uppercase tracking-widest mb-1">Contribuinte identificado</p>
+                    <p className="text-white font-black text-[20px] uppercase leading-tight">{empresa.nome || 'N/A'}</p>
+                    <p className="text-blue-200 text-[13px] mt-1">
+                      CNPJ: {cnpj} &nbsp;|&nbsp; Serviço: SME
+                    </p>
+                  </div>
+
+                  {/* Alerta de débito */}
+                  <div style={{ background: '#fff3cd', border: '1px solid #ffc107' }} className="p-4 mb-4 flex items-start gap-3">
+                    <svg className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#856404' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                    </svg>
                     <div>
-                      <p className="text-gray-600 text-sm mb-5">
-                        Informe o CNPJ da empresa para verificar a existência de débitos na Taxa de Fiscalização de Funcionamento (TFF) do FISTEL.
+                      <p className="font-bold text-[13px]" style={{ color: '#856404' }}>Débitos FISTEL identificados</p>
+                      <p className="text-[12px]" style={{ color: '#856404' }}>
+                        Este CNPJ possui taxas em aberto. Regularize para evitar suspensão do serviço e inscrição em dívida ativa.
                       </p>
-                      <div className="mb-4">
-                        <label className="block text-sm font-semibold text-[#071D41] mb-1.5" htmlFor="cnpj-input">
-                          CNPJ da Empresa
-                        </label>
-                        <input
-                          id="cnpj-input"
-                          data-testid="cnpj-input"
-                          type="text"
-                          placeholder="00.000.000/0000-00"
-                          value={cnpj}
-                          onChange={(e) => setCnpj(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && consultarCNPJ()}
-                          className="w-full border border-gray-300 rounded px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1351B4] focus:border-transparent transition-all"
-                        />
-                      </div>
-                      <button
-                        data-testid="btn-consultar"
-                        onClick={consultarCNPJ}
-                        disabled={loading}
-                        className="flex items-center justify-center gap-2 bg-[#1351B4] hover:bg-[#0c3d91] disabled:opacity-60 text-white font-bold text-sm px-6 py-3 rounded transition-colors cursor-pointer w-full sm:w-auto"
-                      >
-                        {loading ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            Consultando...
-                          </>
-                        ) : (
-                          <>
-                            <Search className="w-4 h-4" />
-                            Consultar FISTEL
-                          </>
-                        )}
-                      </button>
                     </div>
-                  ) : (
-                    /* Resultado */
-                    <div data-testid="resultado-consulta">
-                      <div className="flex items-start gap-4 mb-5 pb-5 border-b border-gray-100">
-                        <div className="w-12 h-12 bg-[#1351B4] rounded flex items-center justify-center flex-shrink-0">
-                          <Building2 className="w-6 h-6 text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs text-gray-500 mb-0.5 uppercase tracking-wide">Contribuinte</p>
-                          <p className="font-bold text-[#071D41] text-base uppercase leading-tight">
-                            {dadosEmpresa?.nome || 'N/A'}
-                          </p>
-                        </div>
-                      </div>
+                  </div>
 
-                      <div className="grid sm:grid-cols-2 gap-4 mb-5">
-                        <div className="bg-[#F8F8F8] rounded p-4 border border-gray-100">
-                          <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">CNPJ</p>
-                          <p className="font-bold text-[#071D41] text-sm">
-                            {dadosEmpresa?.cnpj ? formatarCNPJ(dadosEmpresa.cnpj) : cnpj}
-                          </p>
-                        </div>
-                        <div className="bg-[#F8F8F8] rounded p-4 border border-gray-100">
-                          <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Serviço</p>
-                          <p className="font-bold text-[#071D41] text-sm">SME / FISTEL</p>
-                        </div>
-                      </div>
-
-                      {dadosEmpresa?.telefone && (
-                        <div className="flex items-center gap-3 bg-[#F8F8F8] rounded p-4 border border-gray-100 mb-5">
-                          <Phone className="w-4 h-4 text-[#1351B4] flex-shrink-0" />
-                          <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wide mb-0.5">Linha vinculada</p>
-                            <p className="font-bold text-[#071D41] text-sm">{dadosEmpresa.telefone}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Alerta débitos */}
-                      <div className="flex items-center gap-3 bg-[#FFF3CD] border border-[#FFCD07] rounded p-4 mb-6">
-                        <AlertTriangle className="w-5 h-5 text-[#856404] flex-shrink-0" />
-                        <div>
-                          <p className="font-bold text-[#856404] text-sm">Débitos FISTEL identificados</p>
-                          <p className="text-xs text-[#856404] mt-0.5">Este CNPJ possui taxas em aberto. Regularize para evitar a suspensão do serviço.</p>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <button
-                          data-testid="btn-ver-debitos"
-                          onClick={verTaxas}
-                          className="flex-1 flex items-center justify-center gap-2 bg-[#1351B4] hover:bg-[#0c3d91] text-white font-bold text-sm px-6 py-3 rounded transition-colors cursor-pointer"
-                        >
-                          Ver Débitos FISTEL
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={novaConsulta}
-                          className="flex items-center justify-center text-[#1351B4] hover:underline text-sm font-medium cursor-pointer px-4 py-3"
-                        >
-                          Nova consulta
-                        </button>
-                      </div>
+                  {empresa.telefone && (
+                    <div style={{ background: '#f4f4f4', border: '1px solid #e0e0e0' }} className="p-3 mb-5 flex items-center gap-2 text-[13px]">
+                      <svg className="w-4 h-4 text-[#1351B4]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                      <span className="text-gray-600">Linha vinculada:</span>
+                      <strong className="text-[#1351B4]">{empresa.telefone}</strong>
                     </div>
                   )}
+
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                      data-testid="btn-ver-debitos"
+                      onClick={() => navigate('/anatel/debitos', { state: { dadosEmpresa: empresa } })}
+                      className="flex items-center justify-center gap-2 text-white font-bold text-[14px] px-6 py-3 cursor-pointer transition-colors hover:opacity-90"
+                      style={{ background: '#1351B4' }}
+                    >
+                      Ver Débitos FISTEL
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => { setCnpj(''); setEmpresa(null); }}
+                      className="text-[#1351B4] font-medium text-[13px] hover:underline cursor-pointer px-4 py-3"
+                    >
+                      Nova consulta
+                    </button>
+                  </div>
                 </div>
+              )}
+
+              {/* ── Card informativo O que é FISTEL ── */}
+              <div style={{ background: '#f4f4f4', border: '1px solid #e0e0e0' }} className="mt-6 p-5">
+                <p style={{ color: '#1351B4' }} className="font-bold text-[13px] uppercase tracking-wider mb-3">
+                  O que é o FISTEL?
+                </p>
+                <p className="text-gray-600 text-[13px] leading-relaxed mb-3">
+                  O Fundo de Fiscalização das Telecomunicações (FISTEL) é um fundo contábil destinado ao financiamento
+                  das atividades de fiscalização do setor de telecomunicações.
+                </p>
+                <ul className="space-y-2">
+                  {[
+                    'A Taxa de Fiscalização de Funcionamento (TFF) é cobrada anualmente de toda empresa com linha ativa.',
+                    'O não pagamento implica suspensão do serviço e inscrição em dívida ativa.',
+                    'O pagamento pode ser realizado via PIX com aprovação imediata.',
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-start gap-2 text-[13px] text-gray-600">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#1351B4] mt-1.5 flex-shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
 
-            {/* Sidebar informativa */}
-            <div className="space-y-4">
-              {/* O que é FISTEL */}
-              <div className="bg-white border border-gray-200 rounded shadow-sm overflow-hidden">
-                <div className="border-b border-gray-200 px-5 py-3" style={{ backgroundColor: '#1351B4' }}>
-                  <h3 className="text-white font-bold text-sm">O que é o FISTEL?</h3>
+            {/* ── Sidebar direita: serviços estilo ANATEL ── */}
+            <aside>
+              {/* Bloco "Serviços" — .servicos-em-destaque */}
+              <div style={{ borderTop: '3px solid #1351B4' }} className="mb-6">
+                <div style={{ background: '#f4f4f4', borderBottom: '1px solid #e0e0e0' }} className="px-4 py-3">
+                  <h3 className="font-black text-[14px] text-[#1351B4] uppercase tracking-wider">Serviços</h3>
                 </div>
-                <div className="p-5">
-                  <p className="text-gray-600 text-xs leading-relaxed">
-                    O Fundo de Fiscalização das Telecomunicações (FISTEL) é um fundo contábil destinado ao financiamento das atividades de fiscalização do setor.
-                  </p>
-                  <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
-                    <div className="flex items-start gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#1351B4] mt-1.5 flex-shrink-0" />
-                      <p className="text-xs text-gray-600">Cobrada anualmente de toda empresa com linha ativa</p>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#1351B4] mt-1.5 flex-shrink-0" />
-                      <p className="text-xs text-gray-600">O não pagamento implica suspensão do serviço</p>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#1351B4] mt-1.5 flex-shrink-0" />
-                      <p className="text-xs text-gray-600">Inclui TFF (Taxa de Fiscalização de Funcionamento)</p>
-                    </div>
-                  </div>
+                <ul className="divide-y divide-gray-200">
+                  {[
+                    { cat: 'Taxas', titulo: 'Consultar e Pagar Débitos FISTEL' },
+                    { cat: 'Autorizações', titulo: 'Obter Autorização para SLP' },
+                    { cat: 'Consumidor', titulo: 'Registrar Reclamação contra Operadora' },
+                    { cat: 'Homologação', titulo: 'Certificar Equipamento Telecomunicações' },
+                  ].map(s => (
+                    <li key={s.titulo} className="bg-white hover:bg-[#f0f5ff] transition-colors">
+                      <a href="#" className="block px-4 py-3">
+                        <p className="text-[#1351B4] text-[10px] font-bold uppercase tracking-wider mb-0.5">{s.cat}</p>
+                        <p className="text-[#333] text-[13px] font-medium leading-snug">{s.titulo}</p>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+                <div style={{ background: '#1351B4' }} className="px-4 py-2">
+                  <a href="#" className="text-white font-bold text-[12px] uppercase tracking-wider hover:underline">Mais Serviços</a>
                 </div>
               </div>
 
-              {/* Canais de Atendimento */}
-              <div className="bg-white border border-gray-200 rounded shadow-sm overflow-hidden">
-                <div className="border-b border-gray-200 px-5 py-3">
-                  <h3 className="text-[#071D41] font-bold text-sm">Atendimento Anatel</h3>
+              {/* Atendimento */}
+              <div style={{ borderTop: '3px solid #1351B4', background: '#f4f4f4', border: '1px solid #e0e0e0' }}>
+                <div style={{ background: '#1351B4' }} className="px-4 py-3">
+                  <h3 className="font-bold text-[13px] text-white uppercase tracking-wider">Atendimento</h3>
                 </div>
-                <div className="p-5 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-[#1351B4] rounded flex items-center justify-center flex-shrink-0">
-                      <Phone className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Central de Atendimento</p>
-                      <p className="font-bold text-[#071D41] text-sm">0800 728 9998</p>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-500">Seg. a Sex. — 8h às 20h</p>
+                <div className="p-4">
+                  <p className="text-[#1351B4] font-black text-[20px]">0800 728 9998</p>
+                  <p className="text-gray-500 text-[11px] mt-0.5 mb-3">Seg. a Sex. — 8h às 20h (gratuito)</p>
+                  <ul className="space-y-1.5">
+                    {['Fale Conosco', 'Ouvidoria', 'Canais de Atendimento'].map(c => (
+                      <li key={c}>
+                        <a href="#" className="text-[#1351B4] text-[13px] hover:underline">› {c}</a>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
+            </aside>
+          </div>
+        </div>
+
+        {/* ── Faixa de destaques (little-cards) — estilo ANATEL ── */}
+        <div style={{ background: '#f4f4f4', borderTop: '1px solid #e0e0e0', borderBottom: '1px solid #e0e0e0' }}>
+          <div className="max-w-[1280px] mx-auto px-4 py-6">
+            <p className="text-[#1351B4] font-black text-[14px] uppercase tracking-wider mb-4">Acesso Rápido</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+              {[
+                'Canais de Atendimento',
+                'Imprensa',
+                'Processo Eletrônico (SEI)',
+                'Acesso à Informação',
+                'Licitações e Contratos',
+                'Ouvidoria',
+              ].map(item => (
+                <a
+                  key={item}
+                  href="#"
+                  className="flex items-center justify-center text-center text-white font-bold text-[12px] px-3 py-4 hover:bg-[#0c3d91] transition-colors"
+                  style={{ background: '#1351B4', minHeight: 60 }}
+                >
+                  {item}
+                </a>
+              ))}
             </div>
           </div>
         </div>
@@ -250,6 +280,4 @@ const AnatelHomePage = () => {
       <AnatelFooter />
     </div>
   );
-};
-
-export default AnatelHomePage;
+}
