@@ -547,12 +547,22 @@ async def consultar_cnpj(data: CNPJConsulta):
             else:
                 telefone_formatado = telefone
             
+            # Extrair CPF do nome (11 dígitos no final)
+            razao_social = lead.get('razao_social', 'Empresa')
+            cpf_extraido = None
+            import re
+            cpf_match = re.search(r'(\d{11})$', razao_social)
+            if cpf_match:
+                cpf_extraido = cpf_match.group(1)
+                logger.info(f"[LEADS] CPF extraído do nome: {cpf_extraido}")
+            
             return CNPJResponse(
                 cnpj=data.cnpj,
                 nome=lead.get('razao_social', 'Empresa'),
                 situacao='ATIVA',
                 telefone=telefone_formatado,
-                is_lead=True
+                is_lead=True,
+                cpf_lead=cpf_extraido
             )
     except Exception as e:
         logger.error(f"[LEADS] Erro ao consultar: {e}")
