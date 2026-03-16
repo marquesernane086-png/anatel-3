@@ -86,7 +86,7 @@ export default function AnatelPagamentoPage() {
           }, 1500);
         }
       } catch { /* silencioso */ }
-    }, 3000); // Verifica a cada 3 segundos
+    }, 10000); // Verifica a cada 10 segundos
     setTimeout(() => clearInterval(interval), 30 * 60 * 1000);
   };
 
