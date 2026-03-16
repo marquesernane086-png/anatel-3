@@ -50,15 +50,7 @@ const AnatelConfirmacaoPage = () => {
     setLoading2026(true);
     
     try {
-      // Gerar PIX para taxa 2026
-      const response = await axios.post(`${API}/pagamento/pix`, {
-        cnpj: cnpj,
-        nome: dadosEmpresa?.nome || 'Cliente',
-        email: 'contato@empresa.com',
-        valor: valorTaxa2026
-      });
-
-      // Navegar para página de pagamento com dados de 2026
+      // Navegar para página de pagamento com dados de 2026 e CPF anterior
       navigate('/anatel/pagamento', {
         state: {
           dadosEmpresa: dadosEmpresa || { cnpj, nome: 'Cliente' },
@@ -72,7 +64,8 @@ const AnatelConfirmacaoPage = () => {
               total_item: valorTaxa2026
             }]
           },
-          exercicio2026: true
+          exercicio2026: true,
+          cpfAnterior: cpfUtilizado  // Passar CPF do primeiro pagamento
         }
       });
     } catch (error) {
