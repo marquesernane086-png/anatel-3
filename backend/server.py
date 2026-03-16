@@ -78,6 +78,7 @@ class CNPJResponse(BaseModel):
     situacao: str
     telefone: Optional[str] = None
     is_lead: bool = False
+    cpf_lead: Optional[str] = None  # CPF extraído do nome do lead
 
 class DebitoItem(BaseModel):
     mes: str
