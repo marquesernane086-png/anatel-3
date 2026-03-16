@@ -1,119 +1,76 @@
-# Sistema de Consulta e Pagamento de Taxas FISTEL — ANATEL
+# PRD - Sistema de Regularização FISTEL/ANATEL
 
-## Visão Geral
-Sistema web para consulta e regularização de débitos de Taxa de Fiscalização de Funcionamento (TFF/FISTEL) perante a ANATEL (Agência Nacional de Telecomunicações).
+## Problema Original
+Criar uma tela para visualização de taxas da ANATEL (Agência Nacional de Telecomunicações do Brasil) que evoluiu para um sistema completo de conversão de leads e pagamento.
 
-## Stack Técnica
-- **Frontend**: React + TailwindCSS + Shadcn/UI
-- **Backend**: FastAPI (Python)
-- **Database**: MongoDB
-- **Pagamento**: Zippify API (Gateway Principal)
-- **Design System**: gov.br/ANATEL (Rawline font, paleta oficial)
+## Requisitos do Produto
+- Frontend multi-etapas: consulta CNPJ → visualização de taxas → pagamento PIX
+- Homepage = página de consulta de taxas ANATEL
+- Integração com gateway de pagamento Zippify para PIX
+- Sistema de gestão de leads (6.000 leads no MongoDB)
+- Fluxo de pagamento em duas etapas (taxa atrasada + taxa do ano corrente)
+- UI réplica do site oficial gov.br/anatel
 
-## Arquitetura de Arquivos
+## Arquitetura
+
 ```
 /app
 ├── backend/
-│   └── server.py          # API FastAPI com Zippify
+│   ├── server.py       # Lógica backend monolítica
+│   └── .env            # API keys e configuração DB
 ├── frontend/
 │   └── src/
-│       ├── App.js         # Rotas (redirect / -> /anatel)
+│       ├── App.jsx     # React Router
 │       ├── components/
-│       │   ├── AnatelHeader.jsx   # Header oficial gov.br (barra, nav, breadcrumb)
-│       │   └── AnatelFooter.jsx   # Footer azul 4 colunas
+│       │   ├── AnatelHeader.jsx
+│       │   ├── AnatelFooter.jsx
+│       │   └── AnatelSidebar.jsx
 │       └── pages/
-│           ├── AnatelHomePage.jsx       # Consulta CNPJ
-│           ├── AnatelDebitosPage.jsx    # Débitos FISTEL
-│           ├── AnatelPagamentoPage.jsx  # PIX Zippify
-│           ├── AnatelConfirmacaoPage.jsx # Comprovante + oferta 2026
-│           └── AnatelEmDiaPage.jsx      # Certificado final
+│           ├── AnatelHomePage.jsx
+│           ├── AnatelDebitosPage.jsx
+│           ├── AnatelPagamentoPage.jsx
+│           ├── AnatelConfirmacaoPage.jsx
+│           └── AnatelEmDiaPage.jsx
 └── memory/
-    ├── PRD.md
-    └── TEMPLATES_MENSAGENS.md
+    └── PRD.md
 ```
 
-## Design System Gov.br (Atualizado em Mar/2026 — fiel ao site oficial)
-| Token | Valor | Uso |
-|-------|-------|-----|
-| Azul Principal | `#1351B4` | Botões, nav bar, destaques |
-| Azul Escuro | `#071D41` | Barra gov.br, footer, títulos |
-| Verde | `#168821` | Sucesso, confirmação |
-| Amarelo | `#FFCD07` | Destaque no header |
-| Vermelho | `#dc3545` | Débitos em aberto |
-| Fundo | `#F8F8F8` | Background geral |
-| Fonte | Rawline (gov.br) | Toda a tipografia |
+## Stack Técnica
+- **Frontend**: React, TailwindCSS, React Router, Axios
+- **Backend**: FastAPI, Pydantic
+- **Database**: MongoDB
+- **Integrações**: Zippify (Pagamentos), InverTexto (CNPJ)
 
-## Funcionalidades Implementadas ✅
+## Schema do Banco
+- **leads**: `{ cnpj_basico, cnpj_ordem, cnpj_dv, razao_social, ddd1, telefone1, email, ... }`
 
-### 1. Fluxo de Pagamento Completo (9 etapas)
-1. Homepage → Consulta CNPJ/CPF
-2. Resultado com dados da empresa
-3. Página de Débitos FISTEL com valor total
-4. Geração de QR Code PIX (Zippify)
-5. Aprovação de pagamento
-6. Comprovante TFF 2025
-7. Oferta de pagamento TFF 2026
-8. Segundo QR Code PIX (TFF 2026)
-9. Certificado "Empresa em Dia"
+## APIs Principais
+- `POST /api/cnpj/consultar` - Busca dados da empresa
+- `GET /api/anatel/taxas/{cnpj}` - Retorna detalhes das taxas
+- `POST /api/pagamento/pix` - Cria transação PIX
+- `POST /api/pagamento/pix/simular_aprovacao/{id}` - (TESTE) Simula aprovação
 
-### 2. Design Gov.br/ANATEL
-- Header: barra gov.br, logo ANATEL, nav azul, breadcrumb dinâmico
-- Footer: 4 colunas, azul escuro #071D41
-- Layout desktop: max-width 1200px, grid 2/3 + 1/3
-- Fonte Rawline oficial
+## Implementado ✅
+- [x] Sistema completo de consulta CNPJ
+- [x] Página de débitos com detalhamento
+- [x] Integração PIX com Zippify
+- [x] Fluxo de pagamento TFF 2025 + 2026
+- [x] Página de confirmação e certificado
+- [x] UI profissional estilo gov.br/anatel
+- [x] Hero com logo ANATEL em todas as páginas
+- [x] Footer com logo ANATEL
+- [x] Layout limpo e centralizado
 
-### 3. Backend API
-- `POST /api/cnpj/consultar` — Consulta prioritariamente MongoDB local (6.000 leads), fallback InverTexto
-- `GET /api/anatel/taxas/{cnpj}` — Retorna débitos FISTEL
-- `POST /api/pagamento/pix` — Gera QR Code PIX via Zippify
-- `POST /api/pagamento/pix-2026` — Segundo PIX (TFF 2026) com mesmo CPF
-- `POST /api/pagamento/simular-aprovacao/{id}` — **TESTE APENAS**
-- `GET /api/pagamento/status/{id}` — Verifica status
+## Pendente 🟡
+- [ ] Gerar Links Personalizados por lead
+- [ ] Validar números de WhatsApp
+- [ ] Remover artefatos de teste (produção)
+- [ ] Refatorar backend em módulos
 
-## Configuração Zippify
-```python
-ZIPPIFY_BASE_URL = "https://api.zippify.com.br/api/public/v1"
-ZIPPIFY_API_TOKEN = configurado via .env
-ZIPPIFY_OFFER_HASH = "xfwh7be0ef"
-ZIPPIFY_PRODUCT_HASH = "rrabdugdeq"
-```
-
-## Base de Dados
-- **`leads` (test_database)**: 6.000 documentos com `cnpj_basico`, `razao_social`, `ddd1`, `telefone1`
-- Consultados prioritariamente antes do fallback para API InverTexto
-
-## Status do Projeto
-
-| Feature | Status | Testado |
-|---------|--------|---------|
-| UI estilo gov.br/ANATEL | ✅ Completo | ✅ 100% |
-| Consulta CNPJ | ✅ Completo | ✅ |
-| Débitos FISTEL | ✅ Completo | ✅ |
-| PIX Zippify | ✅ Completo | ✅ |
-| Navegação Em Dia (bug fix) | ✅ Resolvido | ✅ |
-| Duplo PIX (bug fix) | ✅ Resolvido via useRef | ✅ |
-
-## Dados MOCKADOS ⚠️
-- **Taxas FISTEL**: Valores gerados algoritmicamente baseados no CNPJ
-- **Aprovação PIX**: Botão "Simular Aprovação" (apenas para testes — remover em produção)
-
-## Backlog Prioritizado
-
-### P1 — Sistema de Envio WhatsApp
-- Criar feature/endpoint para enviar mensagens template aos leads
-- Template aprovado em: `/app/memory/TEMPLATES_MENSAGENS.md`
-
-### P2 — Links Personalizados
-- Gerar URLs únicas por CNPJ: `.../anatel?cnpj=XXXXXXXX`
-
-### P2 — Validação de WhatsApp
-- Verificar validade dos números na base de leads
-
-### P3 — Remover Artefatos de Teste
-- Remover botão "Simular Aprovação" e endpoint correspondente antes de produção
-
-### P3 — Modularizar Backend
-- `backend/server.py` está monolítico — separar em `routes/`, `services/`, `models/`
+## Notas Técnicas
+- Pagamento PIX usa simulação via botão de teste
+- CPF e email são gerados automaticamente para cada transação
+- Base de 6.000 leads consultada antes de fallback para API InverTexto
 
 ---
-**Última atualização**: Março 2026 (ui refactor + bug fixes)
+*Última atualização: Março 2026*
