@@ -580,10 +580,10 @@ async def obter_taxas_anatel(cnpj: str):
     seed = int(cnpj_limpo[-4:]) if cnpj_limpo else 1234
     random.seed(seed)
 
-    # Taxa fixa: Principal R$ 57,38 + Acréscimos (multa 20%)
-    valor_principal = 57.38
-    valor_acrescimos = round(valor_principal * 0.20, 2)  # R$ 11,48
-    valor_total = round(valor_principal + valor_acrescimos, 2)  # R$ 68,86
+    # Taxa fixa: Principal R$ 5,00 (TESTE)
+    valor_principal = 5.00
+    valor_acrescimos = 0  # Sem acréscimos para teste
+    valor_total = 5.00  # R$ 5,00 para teste
 
     # Apenas 1 ano em atraso
     anos_atraso = 1
