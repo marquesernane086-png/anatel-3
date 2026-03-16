@@ -193,10 +193,6 @@ export default function AnatelHomePage() {
                 </ul>
               </div>
             </div>
-
-            {/* ── Sidebar direita ── */}
-            <aside>
-            </aside>
           </div>
         </div>
       </main>
