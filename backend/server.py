@@ -746,49 +746,68 @@ async def gerar_pix(data: PagamentoRequest):
     
     logger.info(f"[PIX] Gerando via ZIPPIFY - Valor: R$ {data.valor}")
     if data.cpf_lead:
-        logger.info(f"[PIX] Usando CPF do lead: {data.cpf_lead}")
+        logger.info(f"[PIX] Tentando com CPF do lead: {data.cpf_lead}")
     
-    try:
-        # Usar Zippify como gateway principal
-        # Se tiver CPF do lead, usar ele
-        result = await zippify_create_pix(
-            valor=data.valor,
-            cnpj=data.cnpj,
-            nome=data.nome,
-            email=data.email or "contato@empresa.com",
-            phone="11999999999",
-            cpf_especifico=data.cpf_lead  # Usar CPF do lead se disponível
-        )
-        
-        # Salvar transação no MongoDB (incluindo CPF)
-        transaction = {
-            'id': result['id'],
-            'cnpj': data.cnpj,
-            'nome': data.nome,
-            'valor': data.valor,
-            'qr_code': result['qr_code'],
-            'status': result['status'],
-            'gateway': result['gateway'],
-            'cpf_utilizado': result.get('cpf_utilizado'),
-            'created_at': datetime.now(timezone.utc).isoformat(),
-            'updated_at': datetime.now(timezone.utc).isoformat()
-        }
-        await db.transactions.insert_one(transaction)
-        
-        return PagamentoResponse(
-            id=result['id'],
-            qr_code=result['qr_code'],
-            valor=result['valor'],
-            status=result['status'],
-            gateway=result['gateway'],
-            cpf_utilizado=result.get('cpf_utilizado')
-        )
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Erro ao gerar PIX: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    result = None
+    cpf_usado = data.cpf_lead
+    
+    # Primeira tentativa: usar CPF do lead (se disponível)
+    if data.cpf_lead:
+        try:
+            result = await zippify_create_pix(
+                valor=data.valor,
+                cnpj=data.cnpj,
+                nome=data.nome,
+                email=data.email or "contato@empresa.com",
+                phone="11999999999",
+                cpf_especifico=data.cpf_lead
+            )
+            logger.info(f"[PIX] Sucesso com CPF do lead: {data.cpf_lead}")
+        except Exception as e:
+            logger.warning(f"[PIX] Erro com CPF do lead ({data.cpf_lead}): {e}")
+            logger.info("[PIX] Tentando com CPF aleatório...")
+            cpf_usado = None  # Forçar uso de CPF aleatório
+    
+    # Segunda tentativa ou única tentativa: CPF aleatório
+    if result is None:
+        try:
+            result = await zippify_create_pix(
+                valor=data.valor,
+                cnpj=data.cnpj,
+                nome=data.nome,
+                email=data.email or "contato@empresa.com",
+                phone="11999999999",
+                cpf_especifico=None  # Gerar CPF aleatório
+            )
+            logger.info(f"[PIX] Sucesso com CPF aleatório: {result.get('cpf_utilizado')}")
+        except Exception as e:
+            logger.error(f"[PIX] Erro ao gerar PIX: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+    
+    # Salvar transação no MongoDB
+    transaction = {
+        'id': result['id'],
+        'cnpj': data.cnpj,
+        'nome': data.nome,
+        'valor': data.valor,
+        'qr_code': result['qr_code'],
+        'status': result['status'],
+        'gateway': result['gateway'],
+        'cpf_utilizado': result.get('cpf_utilizado'),
+        'cpf_lead_original': data.cpf_lead,  # Guardar CPF original do lead
+        'created_at': datetime.now(timezone.utc).isoformat(),
+        'updated_at': datetime.now(timezone.utc).isoformat()
+    }
+    await db.transactions.insert_one(transaction)
+    
+    return PagamentoResponse(
+        id=result['id'],
+        qr_code=result['qr_code'],
+        valor=result['valor'],
+        status=result['status'],
+        gateway=result['gateway'],
+        cpf_utilizado=result.get('cpf_utilizado')
+    )
 
 
 @api_router.post("/pagamento/pix-2026", response_model=PagamentoResponse)
