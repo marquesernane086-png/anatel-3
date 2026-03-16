@@ -1,80 +1,95 @@
 import React, { useState } from 'react';
 
+/* ─── Header fiel ao site oficial www.gov.br/anatel ─── */
 const AnatelHeader = ({ breadcrumb = null }) => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header
-      className="w-full"
-      style={{ fontFamily: "'Rawline', 'Segoe UI', system-ui, sans-serif", background: '#fff' }}
-    >
-      {/* ── Linha 1: gov.br logo + Ministério + links institucionais ── */}
-      <div
-        className="w-full"
-        style={{ borderBottom: '1px solid #e8e8e8', background: '#fff' }}
-      >
+    <header style={{ fontFamily: "'Rawline','Segoe UI',system-ui,sans-serif", background: '#fff' }}>
+
+      {/* ══════════════════════════════════════════════════
+          LINHA 1 — gov.br logo + Ministério + links inst.
+          ══════════════════════════════════════════════════ */}
+      <div style={{ background: '#fff', borderBottom: '1px solid #ededed' }}>
         <div
-          className="max-w-[1280px] mx-auto px-4 sm:px-6"
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 64 }}
+          style={{
+            maxWidth: 1280,
+            margin: '0 auto',
+            padding: '0 24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            height: 72,
+          }}
         >
-          {/* Lado esquerdo: logo gov.br + Ministério das Comunicações */}
-          <a href="/anatel" className="flex items-center gap-3 hover:opacity-90 transition-opacity flex-shrink-0">
-            {/* Logo gov.br colorido (SVG fiel ao original) */}
-            <svg
-              width="98"
-              height="56"
-              viewBox="0 0 98 56"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-label="gov.br"
-              style={{ flexShrink: 0 }}
-            >
-              {/* "g" azul */}
-              <text x="0" y="38" fontSize="44" fontWeight="900" fontFamily="'Rawline','Arial Black',sans-serif" fill="#1351B4">g</text>
-              {/* "o" amarelo */}
-              <text x="24" y="38" fontSize="44" fontWeight="900" fontFamily="'Rawline','Arial Black',sans-serif" fill="#FFCD07">o</text>
-              {/* "v" verde */}
-              <text x="48" y="38" fontSize="44" fontWeight="900" fontFamily="'Rawline','Arial Black',sans-serif" fill="#168821">v</text>
-              {/* ponto azul */}
-              <text x="69" y="38" fontSize="44" fontWeight="900" fontFamily="'Rawline','Arial Black',sans-serif" fill="#1351B4">.</text>
-              {/* "b" azul */}
-              <text x="76" y="38" fontSize="44" fontWeight="900" fontFamily="'Rawline','Arial Black',sans-serif" fill="#1351B4">b</text>
-              {/* "r" azul — posição ajustada pois 'b' é mais largo */}
-              <text x="94" y="38" fontSize="44" fontWeight="900" fontFamily="'Rawline','Arial Black',sans-serif" fill="#168821">r</text>
-            </svg>
-
-            {/* Separador vertical */}
-            <div style={{ width: 1, height: 36, background: '#ccc', marginLeft: 4, marginRight: 4 }} />
-
-            {/* Ministério das Comunicações */}
+          {/* ── Esquerda: logo + ministério ── */}
+          <a
+            href="/anatel"
+            style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', flexShrink: 0 }}
+          >
+            {/* Logo gov.br — imagem oficial do servidor do governo */}
+            <img
+              src="https://www.gov.br/++theme++padrao_govbr/img/logo-govbr-color-b.png"
+              alt="gov.br"
+              style={{ height: 56, width: 'auto', display: 'block' }}
+              onError={(e) => {
+                /* fallback SVG se imagem oficial não carregar */
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+            {/* Fallback SVG (oculto por padrão) */}
             <span
+              style={{
+                display: 'none',
+                alignItems: 'baseline',
+                fontWeight: 900,
+                fontSize: 32,
+                letterSpacing: -1,
+                lineHeight: 1,
+              }}
+            >
+              <span style={{ color: '#1351B4' }}>go</span>
+              <span style={{ color: '#FFCD07' }}>v</span>
+              <span style={{ color: '#1351B4' }}>.</span>
+              <span style={{ color: '#168821' }}>b</span>
+              <span style={{ color: '#1351B4' }}>r</span>
+            </span>
+
+            {/* Separador + Ministério */}
+            <span style={{ width: 1, height: 40, background: '#ccc', flexShrink: 0 }} />
+            <span
+              style={{ color: '#888', fontSize: 13, fontWeight: 400, lineHeight: 1.4, maxWidth: 160 }}
               className="hidden sm:block"
-              style={{ color: '#888', fontSize: 12, fontWeight: 400, lineHeight: 1.3, maxWidth: 140 }}
             >
               Ministério das<br />Comunicações
             </span>
           </a>
 
-          {/* Lado direito: links + idiomas + acessibilidade + Entrar */}
-          <div className="hidden md:flex items-center gap-1" style={{ flexWrap: 'nowrap' }}>
-            {/* Idiomas */}
-            <div className="flex items-center" style={{ gap: 2, marginRight: 12 }}>
-              {['PT', 'EN', 'ES'].map((lang, i) => (
+          {/* ── Direita: idiomas + links + Entrar ── */}
+          <div
+            className="hidden md:flex"
+            style={{ alignItems: 'center', gap: 0 }}
+          >
+            {/* PT | EN | ES */}
+            <div style={{ display: 'flex', alignItems: 'center', marginRight: 16 }}>
+              {[['PT', true], ['EN', false], ['ES', false]].map(([lang, active], i) => (
                 <React.Fragment key={lang}>
                   <a
                     href="#"
                     style={{
-                      color: i === 0 ? '#1351B4' : '#888',
+                      color: active ? '#1351B4' : '#999',
                       fontSize: 12,
-                      fontWeight: i === 0 ? 700 : 400,
+                      fontWeight: active ? 700 : 400,
                       textDecoration: 'none',
-                      padding: '2px 3px',
+                      padding: '2px 4px',
+                      lineHeight: 1,
                     }}
                     className="hover:underline"
                   >
                     {lang}
                   </a>
-                  {i < 2 && <span style={{ color: '#ccc', fontSize: 10 }}>|</span>}
+                  {i < 2 && <span style={{ color: '#ddd', fontSize: 11, margin: '0 1px' }}>|</span>}
                 </React.Fragment>
               ))}
             </div>
@@ -84,7 +99,14 @@ const AnatelHeader = ({ breadcrumb = null }) => {
               <a
                 key={link}
                 href="#"
-                style={{ color: '#1351B4', fontSize: 13, fontWeight: 400, textDecoration: 'none', padding: '4px 8px', whiteSpace: 'nowrap' }}
+                style={{
+                  color: '#1351B4',
+                  fontSize: 13,
+                  fontWeight: 400,
+                  textDecoration: 'none',
+                  padding: '6px 10px',
+                  whiteSpace: 'nowrap',
+                }}
                 className="hover:underline"
               >
                 {link}
@@ -94,98 +116,112 @@ const AnatelHeader = ({ breadcrumb = null }) => {
             {/* Acessibilidade */}
             <a
               href="#"
-              style={{ color: '#1351B4', fontSize: 13, fontWeight: 400, display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', textDecoration: 'none' }}
+              style={{
+                color: '#1351B4',
+                fontSize: 13,
+                fontWeight: 400,
+                textDecoration: 'none',
+                padding: '6px 10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                whiteSpace: 'nowrap',
+              }}
               className="hover:underline"
             >
-              {/* Ícone acessibilidade — círculo metade */}
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="10" stroke="#1351B4" strokeWidth="2"/>
-                <path d="M12 2 A10 10 0 0 1 12 22 Z" fill="#1351B4"/>
+              {/* Ícone acessibilidade oficial gov.br (círculo com metade preenchida) */}
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="10" cy="10" r="9" stroke="#1351B4" strokeWidth="1.8"/>
+                <path d="M10 1 A9 9 0 0 1 10 19 Z" fill="#1351B4"/>
               </svg>
               Acessibilidade
             </a>
 
-            {/* Botão Entrar — SEM funcionalidade de login */}
-            <button
+            {/* Botão Entrar (visual only — sem login) */}
+            <div
               style={{
-                color: '#1351B4',
-                fontSize: 13,
-                fontWeight: 700,
                 display: 'flex',
                 alignItems: 'center',
-                gap: 5,
-                border: '1px solid #1351B4',
+                gap: 6,
+                marginLeft: 8,
+                border: '1.5px solid #1351B4',
                 borderRadius: 4,
-                padding: '5px 12px',
-                background: 'transparent',
+                padding: '6px 14px',
                 cursor: 'default',
-                marginLeft: 4,
                 whiteSpace: 'nowrap',
               }}
-              aria-label="Entrar"
-              tabIndex={-1}
             >
-              {/* Ícone pessoa */}
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="#1351B4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <circle cx="12" cy="7" r="4" stroke="#1351B4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#1351B4" strokeWidth="2" strokeLinecap="round"/>
+                <circle cx="12" cy="7" r="4" stroke="#1351B4" strokeWidth="2"/>
               </svg>
-              Entrar
-            </button>
+              <span style={{ color: '#1351B4', fontSize: 13, fontWeight: 700 }}>Entrar</span>
+            </div>
           </div>
 
           {/* Mobile: hambúrguer */}
           <button
             className="md:hidden"
-            style={{ color: '#1351B4', background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            onClick={() => setMenuOpen(!menuOpen)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#1351B4' }}
             aria-label="Menu"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {mobileMenuOpen
-                ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {menuOpen
+                ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
+                : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"/>
               }
             </svg>
           </button>
         </div>
       </div>
 
-      {/* ── Linha 2: Hambúrguer + "Agência Nacional de Telecomunicações" + Busca ── */}
-      <div
-        className="w-full"
-        style={{ background: '#fff', borderBottom: '1px solid #e0e0e0' }}
-      >
+      {/* ══════════════════════════════════════════════════
+          LINHA 2 — Agência + busca
+          ══════════════════════════════════════════════════ */}
+      <div style={{ background: '#fff', borderBottom: '1px solid #e0e0e0' }}>
         <div
-          className="max-w-[1280px] mx-auto px-4 sm:px-6"
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 64, gap: 16 }}
+          style={{
+            maxWidth: 1280,
+            margin: '0 auto',
+            padding: '0 24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            height: 64,
+          }}
         >
-          {/* Esquerda: ≡ + nome da agência */}
-          <div className="flex items-center gap-3 flex-shrink-0">
-            {/* Ícone de 3 linhas (hambúrguer) azul */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer' }} aria-hidden="true">
-              <span style={{ display: 'block', width: 5, height: 5, background: '#1351B4' }} />
-              <span style={{ display: 'block', width: 5, height: 5, background: '#1351B4' }} />
-              <span style={{ display: 'block', width: 5, height: 5, background: '#1351B4' }} />
+          {/* Ícone 3 quadrados + nome da agência */}
+          <a
+            href="/anatel"
+            style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}
+          >
+            {/* 3 quadradinhos azuis (idênticos à imagem) */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, width: 14, flexShrink: 0 }}>
+              {[0,1,2,3].map(i => (
+                <div
+                  key={i}
+                  style={{ width: 6, height: 6, background: '#1351B4', borderRadius: 0 }}
+                />
+              ))}
             </div>
-            <a
-              href="/anatel"
-              style={{ color: '#1351B4', fontSize: 18, fontWeight: 400, textDecoration: 'none', letterSpacing: '-0.2px' }}
-              className="hover:underline"
+            <span
+              style={{ color: '#1351B4', fontSize: 20, fontWeight: 300, letterSpacing: '-0.3px' }}
             >
               Agência Nacional de Telecomunicações
-            </a>
-          </div>
+            </span>
+          </a>
 
-          {/* Direita: campo de busca com fundo cinza */}
+          {/* Campo de busca — fundo cinza claro */}
           <div
-            className="hidden md:flex items-center"
+            className="hidden md:flex"
             style={{
+              alignItems: 'center',
               background: '#f0f0f0',
               borderRadius: 4,
-              padding: '8px 14px',
+              padding: '9px 16px',
               gap: 10,
-              minWidth: 260,
+              minWidth: 280,
               maxWidth: 340,
               flexShrink: 0,
             }}
@@ -200,50 +236,85 @@ const AnatelHeader = ({ breadcrumb = null }) => {
                 outline: 'none',
                 fontSize: 14,
                 color: '#555',
+                fontFamily: 'inherit',
               }}
-              aria-label="Campo de busca"
+              aria-label="Busca"
             />
             <button
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
               aria-label="Buscar"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="11" cy="11" r="7" stroke="#1351B4" strokeWidth="2.2"/>
-                <path d="M16.5 16.5 L21 21" stroke="#1351B4" strokeWidth="2.2" strokeLinecap="round"/>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <circle cx="11" cy="11" r="7.5" stroke="#1351B4" strokeWidth="2.2"/>
+                <path d="M17 17L21.5 21.5" stroke="#1351B4" strokeWidth="2.2" strokeLinecap="round"/>
               </svg>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile nav expandido */}
-      {mobileMenuOpen && (
+      {/* ══════════════════════════════════════════════════
+          Mobile menu
+          ══════════════════════════════════════════════════ */}
+      {menuOpen && (
         <div style={{ background: '#fff', borderBottom: '1px solid #e0e0e0' }}>
-          <div className="max-w-[1280px] mx-auto px-4 py-3">
-            {/* Busca mobile */}
-            <div style={{ background: '#f0f0f0', borderRadius: 4, display: 'flex', alignItems: 'center', padding: '8px 12px', gap: 8, marginBottom: 12 }}>
-              <input type="text" placeholder="O que você procura?" style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 14, color: '#555' }} />
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#1351B4" strokeWidth="2.2"/><path d="M16.5 16.5 L21 21" stroke="#1351B4" strokeWidth="2.2" strokeLinecap="round"/></svg>
+          <div style={{ maxWidth: 1280, margin: '0 auto', padding: '12px 24px' }}>
+            <div style={{ display: 'flex', background: '#f0f0f0', borderRadius: 4, padding: '8px 12px', gap: 8, marginBottom: 12 }}>
+              <input
+                type="text"
+                placeholder="O que você procura?"
+                style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 14, color: '#555' }}
+              />
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <circle cx="11" cy="11" r="7.5" stroke="#1351B4" strokeWidth="2.2"/>
+                <path d="M17 17L21.5 21.5" stroke="#1351B4" strokeWidth="2.2" strokeLinecap="round"/>
+              </svg>
             </div>
             {['Órgãos do Governo', 'Acesso à Informação', 'Legislação', 'Acessibilidade'].map(item => (
-              <a key={item} href="#" style={{ display: 'block', color: '#1351B4', fontSize: 14, padding: '8px 0', borderBottom: '1px solid #f0f0f0', textDecoration: 'none' }}>{item}</a>
+              <a
+                key={item}
+                href="#"
+                style={{
+                  display: 'block',
+                  color: '#1351B4',
+                  fontSize: 14,
+                  padding: '10px 0',
+                  borderBottom: '1px solid #f0f0f0',
+                  textDecoration: 'none',
+                }}
+              >
+                {item}
+              </a>
             ))}
           </div>
         </div>
       )}
 
-      {/* ── Breadcrumb ── */}
+      {/* ══════════════════════════════════════════════════
+          Breadcrumb (quando fornecido)
+          ══════════════════════════════════════════════════ */}
       {breadcrumb && (
-        <div style={{ background: '#f8f8f8', borderBottom: '1px solid #e8e8e8' }}>
-          <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-2">
-            <nav className="flex flex-wrap items-center gap-1" aria-label="Navegação estrutural" style={{ fontSize: 12, color: '#666' }}>
-              <a href="/anatel" style={{ color: '#1351B4', textDecoration: 'none' }} className="hover:underline">Anatel</a>
-              <span style={{ color: '#aaa', margin: '0 2px' }}>›</span>
-              <a href="#" style={{ color: '#1351B4', textDecoration: 'none' }} className="hover:underline">Regulado</a>
-              <span style={{ color: '#aaa', margin: '0 2px' }}>›</span>
-              <span style={{ color: '#333', fontWeight: 600 }}>{breadcrumb}</span>
-            </nav>
-          </div>
+        <div style={{ background: '#f8f8f8', borderBottom: '1px solid #eaeaea' }}>
+          <nav
+            style={{
+              maxWidth: 1280,
+              margin: '0 auto',
+              padding: '8px 24px',
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: 4,
+              fontSize: 12,
+              color: '#666',
+            }}
+            aria-label="Navegação estrutural"
+          >
+            <a href="/anatel" style={{ color: '#1351B4', textDecoration: 'none' }} className="hover:underline">Anatel</a>
+            <span style={{ color: '#bbb', margin: '0 2px' }}>›</span>
+            <a href="#" style={{ color: '#1351B4', textDecoration: 'none' }} className="hover:underline">Regulado</a>
+            <span style={{ color: '#bbb', margin: '0 2px' }}>›</span>
+            <span style={{ color: '#333', fontWeight: 600 }}>{breadcrumb}</span>
+          </nav>
         </div>
       )}
     </header>
