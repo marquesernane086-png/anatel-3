@@ -9,11 +9,12 @@ const AnatelFooter = () => (
 
           {/* Coluna 1 — Logo */}
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div style={{ background: 'rgba(255,255,255,0.12)', borderRadius: 4, width: 40, height: 40 }}
-                className="flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-black text-[11px] leading-none text-center">ANA<br/>TEL</span>
-              </div>
+            <div className="flex items-center gap-3 mb-4">
+              <img 
+                src="https://customer-assets.emergentagent.com/job_lead-conversion-9/artifacts/ktf9iqob_pngwing.com.png"
+                alt="ANATEL"
+                className="w-16 h-auto"
+              />
               <div>
                 <p className="text-white font-bold text-[15px] leading-none">Anatel</p>
                 <p style={{ color: '#93c2f5' }} className="text-[10px] mt-0.5">Agência Nacional de Telecomunicações</p>

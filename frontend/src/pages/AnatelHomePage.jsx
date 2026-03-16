@@ -181,14 +181,6 @@ export default function AnatelHomePage() {
 
             {/* ── Sidebar direita ── */}
             <aside>
-              {/* Logo ANATEL */}
-              <div className="flex justify-center">
-                <img 
-                  src="https://customer-assets.emergentagent.com/job_lead-conversion-9/artifacts/ktf9iqob_pngwing.com.png"
-                  alt="ANATEL"
-                  className="w-40 h-auto"
-                />
-              </div>
             </aside>
           </div>
         </div>
