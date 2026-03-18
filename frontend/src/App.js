@@ -1,8 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
-import DashboardPage from './pages/DashboardPage';
-import LoginPage from './pages/LoginPage';
-import ProtectedRoute from './components/ProtectedRoute';
 // Páginas ANATEL (Principal)
 import AnatelHomePage from './pages/AnatelHomePage';
 import AnatelDebitosPage from './pages/AnatelDebitosPage';
@@ -10,9 +7,8 @@ import AnatelPagamentoPage from './pages/AnatelPagamentoPage';
 import AnatelConfirmacaoPage from './pages/AnatelConfirmacaoPage';
 import AnatelEmDiaPage from './pages/AnatelEmDiaPage';
 import AnatelLinkPage from './pages/AnatelLinkPage';
-// Debug e Controle
-import WebhookDebugPage from './pages/WebhookDebugPage';
-import ControlePage from './pages/ControlePage';
+// Admin
+import PainelPage from './pages/PainelPage';
 import './App.css';
 
 function App() {
@@ -30,22 +26,10 @@ function App() {
           <Route path="/anatel/confirmacao" element={<AnatelConfirmacaoPage />} />
           <Route path="/anatel/em-dia" element={<AnatelEmDiaPage />} />
           
-          {/* Debug e Controle */}
-          <Route path="/debug/webhook" element={<WebhookDebugPage />} />
-          <Route path="/controle" element={<ControlePage />} />
+          {/* Admin - URL discreta */}
+          <Route path="/painel" element={<PainelPage />} />
           
-          {/* Admin */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            } 
-          />
-          
-          {/* Links únicos com CNPJ - DEVE SER A ÚLTIMA ROTA (catch-all para CNPJs) */}
+          {/* Links únicos com CNPJ - DEVE SER A ÚLTIMA ROTA */}
           <Route path="/:cnpj" element={<AnatelLinkPage />} />
         </Routes>
         <Toaster position="top-center" />
