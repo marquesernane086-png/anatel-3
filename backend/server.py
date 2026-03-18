@@ -580,10 +580,14 @@ async def obter_taxas_anatel(cnpj: str):
     seed = int(cnpj_limpo[-4:]) if cnpj_limpo else 1234
     random.seed(seed)
 
-    # Taxa fixa: Principal R$ 5,00 (TESTE)
-    valor_principal = 5.00
-    valor_acrescimos = 0  # Sem acréscimos para teste
-    valor_total = 5.00  # R$ 5,00 para teste
+    # Taxa TFF: Principal R$ 57,00 + multas/juros
+    valor_principal = 57.00
+    
+    # Calcula acréscimos (multa 20% + juros ~15% = ~35% sobre o principal)
+    percentual_multa = 0.20  # 20% multa
+    percentual_juros = random.uniform(0.12, 0.18)  # 12-18% juros variável
+    valor_acrescimos = round(valor_principal * (percentual_multa + percentual_juros), 2)
+    valor_total = round(valor_principal + valor_acrescimos, 2)
 
     # Apenas 1 ano em atraso
     anos_atraso = 1
