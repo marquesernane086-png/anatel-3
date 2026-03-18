@@ -1,4 +1,9 @@
+# Portal ANATEL - GitIgnore
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# Ambiente (IMPORTANTE: não commitar senhas!)
+backend/.env
+frontend/.env.local
 
 # IDE and editors
 .idea/
