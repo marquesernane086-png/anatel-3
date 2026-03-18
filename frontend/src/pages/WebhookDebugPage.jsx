@@ -223,9 +223,15 @@ export default function WebhookDebugPage() {
                     <div className="text-sm space-y-1">
                       <p><span className="text-gray-500">Event:</span> {log.payload?.event || 'N/A'}</p>
                       <p><span className="text-gray-500">Status:</span> {log.payload?.payment_status || log.payload?.status || 'N/A'}</p>
-                      <p><span className="text-gray-500">ID:</span> <span className="text-blue-400">{log.payload?.id || 'N/A'}</span></p>
+                      <p><span className="text-gray-500">ID:</span> <span className="text-blue-400">{log.payload?.id || log.payload?.token || 'N/A'}</span></p>
+                      {log.payload?.customer?.email && (
+                        <p><span className="text-gray-500">Email:</span> <span className="text-yellow-400">{log.payload.customer.email}</span></p>
+                      )}
                       {log.transaction_id && (
                         <p><span className="text-gray-500">Transação:</span> <span className="text-green-400">{log.transaction_id}</span></p>
+                      )}
+                      {log.search_method && (
+                        <p><span className="text-gray-500">Encontrado por:</span> <span className="text-purple-400">{log.search_method}</span></p>
                       )}
                     </div>
                     <details className="mt-2">
