@@ -607,10 +607,10 @@ async def obter_taxas_anatel(cnpj: str):
         tipo="TFI – Taxa de Fiscalização de Instalação",
         periodo="Exercício 2025",
         principal=valor_principal,
-        acrescimos=valor_acrescimos,
-        total_item=valor_total
+        acrescimos=0.0,
+        total_item=valor_principal
     ))
-    total_geral += valor_total
+    total_geral += valor_principal
 
     total_geral = round(total_geral, 2)
 
