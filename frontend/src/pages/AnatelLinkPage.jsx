@@ -24,13 +24,31 @@ export default function AnatelLinkPage() {
         // Limpar CNPJ (remover pontuação se houver)
         const cnpjLimpo = cnpj.replace(/\D/g, '');
         
-        // Se for CNPJ básico (8 dígitos), completar com zeros
+        console.log('[LINK] CNPJ da URL:', cnpjLimpo, '- Tamanho:', cnpjLimpo.length);
+
+        // Se for CNPJ básico (8 dígitos), buscar na base de leads primeiro
         let cnpjCompleto = cnpjLimpo;
+        
         if (cnpjLimpo.length === 8) {
-          cnpjCompleto = cnpjLimpo + '000100'; // Padrão matriz
+          // Tentar buscar o CNPJ completo na base de leads
+          try {
+            const { data: leadData } = await axios.get(`${API}/leads/buscar/${cnpjLimpo}`);
+            if (leadData && leadData.cnpj) {
+              cnpjCompleto = leadData.cnpj.replace(/\D/g, '');
+              console.log('[LINK] CNPJ encontrado na base de leads:', cnpjCompleto);
+            } else {
+              // Fallback: completar com 0001 + 00 (padrão matriz)
+              cnpjCompleto = cnpjLimpo + '000100';
+              console.log('[LINK] CNPJ completado (fallback):', cnpjCompleto);
+            }
+          } catch (e) {
+            // Se não encontrar, usar padrão
+            cnpjCompleto = cnpjLimpo + '000100';
+            console.log('[LINK] CNPJ completado (fallback):', cnpjCompleto);
+          }
         }
 
-        console.log('[LINK] Consultando CNPJ:', cnpjCompleto);
+        console.log('[LINK] Consultando CNPJ final:', cnpjCompleto);
 
         // Consultar CNPJ
         const { data: empresaData } = await axios.post(`${API}/cnpj/consultar`, {

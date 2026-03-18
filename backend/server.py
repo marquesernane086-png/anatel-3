@@ -1182,6 +1182,61 @@ async def get_links_stats():
     }
 
 
+@api_router.get("/leads/buscar/{cnpj_basico}")
+async def buscar_lead_por_cnpj(cnpj_basico: str):
+    """Busca lead pelo CNPJ básico (8 dígitos) e retorna CNPJ completo"""
+    cnpj_limpo = cnpj_basico.replace(".", "").replace("/", "").replace("-", "")
+    
+    logger.info(f"[LEADS] Buscando CNPJ básico: {cnpj_limpo}")
+    
+    # Buscar na coleção leads (60k)
+    lead = await db.leads.find_one(
+        {'cnpj_basico': cnpj_limpo},
+        {'cnpj': 1, 'razao_social': 1, 'telefone1': 1, 'ddd1': 1}
+    )
+    
+    if lead:
+        # Limpar CNPJ (remover aspas e caracteres especiais)
+        cnpj_raw = str(lead.get('cnpj', '')).replace('"', '').replace(' ', '')
+        # Extrair apenas números
+        cnpj_numeros = ''.join(filter(str.isdigit, cnpj_raw))
+        
+        logger.info(f"[LEADS] Encontrado! CNPJ completo: {cnpj_numeros}")
+        
+        telefone = ''
+        if lead.get('ddd1') and lead.get('telefone1'):
+            telefone = f"{lead.get('ddd1')}{lead.get('telefone1')}"
+        
+        return {
+            "cnpj": cnpj_numeros,
+            "cnpj_basico": cnpj_limpo,
+            "razao_social": lead.get('razao_social'),
+            "telefone": telefone,
+            "found": True
+        }
+    
+    # Buscar na coleção leads_whatsapp (20k)
+    lead_wpp = await db.leads_whatsapp.find_one(
+        {'cnpj': {'$regex': f'^{cnpj_limpo}'}},
+        {'cnpj': 1, 'razao_social': 1, 'telefone': 1}
+    )
+    
+    if lead_wpp:
+        cnpj_completo = str(lead_wpp.get('cnpj', '')).replace(' ', '')
+        logger.info(f"[LEADS WPP] Encontrado! CNPJ completo: {cnpj_completo}")
+        
+        return {
+            "cnpj": cnpj_completo,
+            "cnpj_basico": cnpj_limpo,
+            "razao_social": lead_wpp.get('razao_social'),
+            "telefone": lead_wpp.get('telefone'),
+            "found": True
+        }
+    
+    logger.info(f"[LEADS] CNPJ {cnpj_limpo} não encontrado nas bases")
+    return {"cnpj": None, "found": False}
+
+
 @api_router.get("/stats/links/details")
 async def get_links_details(limit: int = 50, status: str = None):
     """Detalhes de cada link/transação"""
