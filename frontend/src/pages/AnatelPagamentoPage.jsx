@@ -113,10 +113,12 @@ export default function AnatelPagamentoPage() {
   };
 
   const is2026 = stateRef.current?.exercicio2026;
+  const tipoTaxa = taxas?.taxas?.[0]?.tipo || 'TFF – Taxa de Fiscalização de Funcionamento';
+  const isTFI = tipoTaxa.includes('TFI');
 
   return (
     <div className="min-h-screen flex flex-col bg-white" style={{ fontFamily: "'Open Sans','Segoe UI',system-ui,sans-serif" }}>
-      <AnatelHeader breadcrumb={`Pagamento PIX — TFF ${is2026 ? '2026' : '2025'}`} />
+      <AnatelHeader breadcrumb={`Pagamento PIX — ${isTFI ? 'TFI' : 'TFF'} 2025`} />
 
       {/* Hero com Logo ANATEL */}
       <div style={{ background: '#071D41' }} className="py-6 px-4">
@@ -128,7 +130,7 @@ export default function AnatelPagamentoPage() {
           />
           <div className="text-center md:text-left">
             <p style={{ color: '#FFCD07' }} className="text-[11px] font-bold uppercase tracking-widest mb-1">FISTEL Online</p>
-            <h1 className="text-white font-bold text-xl md:text-2xl">Pagamento PIX — TFF {is2026 ? '2026' : '2025'}</h1>
+            <h1 className="text-white font-bold text-xl md:text-2xl">Pagamento PIX — {isTFI ? 'TFI' : 'TFF'} 2025</h1>
           </div>
         </div>
       </div>
@@ -148,7 +150,7 @@ export default function AnatelPagamentoPage() {
                   <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-1">Valor a Pagar</p>
                   <p className="font-black text-[40px] text-[#071D41]" data-testid="valor-pagamento">{fmt(taxas?.total)}</p>
                   <p className="text-[12px] text-[#1351B4] mt-1 font-medium">
-                    Taxa de Fiscalização de Funcionamento — Exercício {is2026 ? '2026' : '2025'}
+                    {isTFI ? 'Taxa de Fiscalização de Instalação' : 'Taxa de Fiscalização de Funcionamento'} — Exercício 2025
                   </p>
                 </div>
 

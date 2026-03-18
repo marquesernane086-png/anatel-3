@@ -124,7 +124,7 @@ export default function AnatelDebitosPage() {
                   </div>
                   <div className="flex justify-between items-center py-3 bg-red-50 rounded-lg px-4 mt-2">
                     <span className="text-red-700 font-bold uppercase">Total a Regularizar</span>
-                    <span className="text-red-600 font-black text-2xl">{fmt(taxas?.total)}</span>
+                    <span className="text-red-600 font-black text-2xl">{fmt(taxas?.taxas?.[0]?.total_item)}</span>
                   </div>
                 </div>
               </div>
@@ -152,11 +152,20 @@ export default function AnatelDebitosPage() {
         <div className="max-w-[1280px] mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <div className="hidden sm:block">
             <p className="text-[11px] text-gray-500 uppercase tracking-wide">Total a regularizar</p>
-            <p className="font-black text-[22px] text-red-600">{fmt(taxas?.total)}</p>
+            <p className="font-black text-[22px] text-red-600">{fmt(taxas?.taxas?.[0]?.total_item)}</p>
           </div>
           <button
             data-testid="btn-regularizar"
-            onClick={() => navigate('/anatel/pagamento', { state: { dadosEmpresa: empresa, taxas } })}
+            onClick={() => {
+              // Passar apenas a primeira taxa (TFF) para pagamento
+              const primeiraTaxa = taxas?.taxas?.[0];
+              const taxasTFF = {
+                ...taxas,
+                total: primeiraTaxa?.total_item || taxas?.total,
+                taxas: [primeiraTaxa]
+              };
+              navigate('/anatel/pagamento', { state: { dadosEmpresa: empresa, taxas: taxasTFF } });
+            }}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 text-white font-black text-[15px] px-8 py-3.5 cursor-pointer hover:opacity-90 transition-opacity"
             style={{ background: '#00A859' }}
           >
