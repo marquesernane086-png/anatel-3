@@ -405,7 +405,7 @@ async def consultar_cnpj(data: CNPJConsulta):
     
     # PASSO 0: Verificar BASE DE LEADS primeiro (prioridade máxima)
     try:
-        lead = await db.leads_anatel.find_one({'cnpj': cnpj_limpo}, {'_id': 0})
+        lead = await db.leads_anatel.find_one({'cnpj_basico': cnpj_limpo[:8]}, {'_id': 0})
         
         if lead:
             logger.info(f"[LEADS] CNPJ {cnpj_limpo} encontrado na base de leads!")
@@ -955,7 +955,7 @@ async def webhook_zippify(request: Request):
                 cnpj = transaction.get('cnpj', '').replace('.', '').replace('/', '').replace('-', '')
                 if cnpj:
                     # Atualizar em leads e leads_whatsapp
-                    await db.leads.update_one(
+                    await db.leads_anatel.update_one(
                         {'cnpj_basico': cnpj[:8]},
                         {'$set': {
                             'pagamento_realizado': True,
@@ -1096,7 +1096,7 @@ async def simulate_payment(transaction_id: str):
     # Marcar lead como pago
     cnpj = transaction.get('cnpj', '').replace('.', '').replace('/', '').replace('-', '')
     if cnpj:
-        await db.leads.update_one(
+        await db.leads_anatel.update_one(
             {'cnpj_basico': cnpj[:8]},
             {'$set': {
                 'pagamento_realizado': True,
@@ -1190,7 +1190,7 @@ async def buscar_lead_por_cnpj(cnpj_basico: str):
     logger.info(f"[LEADS] Buscando CNPJ básico: {cnpj_limpo}")
     
     # Buscar na coleção leads (60k)
-    lead = await db.leads.find_one(
+    lead = await db.leads_anatel.find_one(
         {'cnpj_basico': cnpj_limpo},
         {'cnpj': 1, 'razao_social': 1, 'telefone1': 1, 'ddd1': 1}
     )
