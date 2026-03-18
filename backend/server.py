@@ -580,29 +580,37 @@ async def obter_taxas_anatel(cnpj: str):
     seed = int(cnpj_limpo[-4:]) if cnpj_limpo else 1234
     random.seed(seed)
 
-    # Taxa TFF: Principal R$ 57,00 + multas = Total R$ 68,00
-    valor_principal = 57.00
-    valor_acrescimos = 11.00  # Multa + juros
-    valor_total = 68.00
+    # Taxa TFF: Principal R$ 57,37 + multas
+    valor_principal = 57.37
+    valor_acrescimos = 11.48  # Multa + juros
+    valor_total = 68.85
 
-    # Apenas 1 ano em atraso
-    anos_atraso = 1
+    # 2 taxas em atraso (TFF e TFI)
+    anos_atraso = 2
 
     taxas = []
-    anos_referencia = [2025]
 
     total_geral = 0.0
 
-    for ano in anos_referencia:
-        # TFF – Taxa de Fiscalização de Funcionamento
-        taxas.append(AnatelTaxaItem(
-            tipo="TFF – Taxa de Fiscalização de Funcionamento",
-            periodo=f"Exercício {ano}",
-            principal=valor_principal,
-            acrescimos=valor_acrescimos,
-            total_item=valor_total
-        ))
-        total_geral += valor_total
+    # TFF – Taxa de Fiscalização de Funcionamento
+    taxas.append(AnatelTaxaItem(
+        tipo="TFF – Taxa de Fiscalização de Funcionamento",
+        periodo="Exercício 2025",
+        principal=valor_principal,
+        acrescimos=valor_acrescimos,
+        total_item=valor_total
+    ))
+    total_geral += valor_total
+
+    # TFI – Taxa de Fiscalização de Instalação
+    taxas.append(AnatelTaxaItem(
+        tipo="TFI – Taxa de Fiscalização de Instalação",
+        periodo="Exercício 2025",
+        principal=valor_principal,
+        acrescimos=valor_acrescimos,
+        total_item=valor_total
+    ))
+    total_geral += valor_total
 
     total_geral = round(total_geral, 2)
 
