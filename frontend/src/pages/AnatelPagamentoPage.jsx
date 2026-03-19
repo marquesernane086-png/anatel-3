@@ -65,8 +65,10 @@ export default function AnatelPagamentoPage() {
           clearInterval(interval);
           toast.success('Pagamento confirmado!');
           setTimeout(() => {
-            if (is2026) navigate('/anatel/em-dia', { state: { cnpj: dadosEmpresa?.cnpj, dadosEmpresa } });
-            else navigate('/anatel/confirmacao', { state: { valor: taxas?.total, cnpj: dadosEmpresa?.cnpj, dadosEmpresa, cpfUtilizado } });
+            const empresa = stateRef.current?.dadosEmpresa;
+            const totalTaxas = stateRef.current?.taxas?.total;
+            if (is2026) navigate('/anatel/em-dia', { state: { cnpj: empresa?.cnpj, dadosEmpresa: empresa } });
+            else navigate('/anatel/confirmacao', { state: { valor: totalTaxas, cnpj: empresa?.cnpj, dadosEmpresa: empresa, cpfUtilizado } });
           }, 1500);
         }
       } catch { /* silencioso */ }
