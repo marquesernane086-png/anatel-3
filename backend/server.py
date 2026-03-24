@@ -959,6 +959,26 @@ async def verificar_status(transaction_id: str):
     
     return transaction
 
+
+@api_router.post("/pagamento/simular-aprovacao/{transaction_id}")
+async def simular_aprovacao(transaction_id: str):
+    """Simula aprovação de pagamento PIX para testes"""
+    # Buscar transação
+    transaction = await db.transactions.find_one({'id': transaction_id}, {'_id': 0})
+    
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Transação não encontrada")
+    
+    # Atualizar status para aprovado
+    await db.transactions.update_one(
+        {'id': transaction_id},
+        {'$set': {'status': 'paid', 'updated_at': datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    logger.info(f"[SIMULAÇÃO] Pagamento {transaction_id} aprovado manualmente")
+    
+    return {"status": "paid", "message": "Pagamento simulado com sucesso!"}
+
 # Webhook Zippify - Recebe notificações de pagamento
 @api_router.api_route("/webhook/zippify", methods=["GET", "POST", "OPTIONS"])
 async def webhook_zippify(request: Request):
