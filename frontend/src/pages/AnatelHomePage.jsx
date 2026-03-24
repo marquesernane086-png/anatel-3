@@ -9,26 +9,25 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 /* ─────────────── helpers ─────────────── */
-const formatCNPJ = (v) => {
+const formatCPF = (v) => {
   const n = v.replace(/\D/g, '');
-  if (n.length <= 11) return n.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-  return n.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+  return n.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
 };
 
 /* ─────────────── component ─────────────── */
 export default function AnatelHomePage() {
-  const [cnpj, setCnpj] = useState('');
+  const [cpf, setCpf] = useState('');
   const [loading, setLoading] = useState(false);
-  const [empresa, setEmpresa] = useState(null);
+  const [pessoa, setPessoa] = useState(null);
   const navigate = useNavigate();
 
   const consultar = async () => {
-    const limpo = cnpj.replace(/\D/g, '');
-    if (!limpo || limpo.length < 11) { toast.error('Digite um CNPJ válido'); return; }
+    const limpo = cpf.replace(/\D/g, '');
+    if (!limpo || limpo.length !== 11) { toast.error('Digite um CPF válido (11 dígitos)'); return; }
     setLoading(true);
     try {
-      const { data } = await axios.post(`${API}/cnpj/consultar`, { cnpj: limpo });
-      setEmpresa(data);
+      const { data } = await axios.post(`${API}/cpf/consultar`, { cpf: limpo });
+      setPessoa(data);
     } catch {
       toast.error('Erro ao consultar. Tente novamente.');
     } finally {
@@ -71,27 +70,27 @@ export default function AnatelHomePage() {
                 </h2>
               </div>
 
-              {!empresa ? (
+              {!pessoa ? (
                 /* ── Card de consulta ── */
                 <div className="border border-gray-200 bg-white p-6">
                   <p className="text-gray-600 text-[14px] mb-5 leading-relaxed">
-                    Informe o CNPJ da empresa para verificar a existência de débitos na
+                    Informe o CPF do contribuinte para verificar a existência de débitos na
                     <strong className="text-[#1351B4]"> Taxa de Fiscalização de Funcionamento (TFF)</strong> do FISTEL.
                   </p>
 
                   <div className="mb-4">
-                    <label className="block text-[13px] font-bold text-[#333] mb-1.5" htmlFor="cnpj-input">
-                      CNPJ da Empresa *
+                    <label className="block text-[13px] font-bold text-[#333] mb-1.5" htmlFor="cpf-input">
+                      CPF do Contribuinte *
                     </label>
                     <input
-                      id="cnpj-input"
-                      data-testid="cnpj-input"
+                      id="cpf-input"
+                      data-testid="cpf-input"
                       type="text"
                       inputMode="numeric"
-                      maxLength={18}
-                      placeholder="00.000.000/0000-00"
-                      value={cnpj}
-                      onChange={e => setCnpj(e.target.value)}
+                      maxLength={14}
+                      placeholder="000.000.000-00"
+                      value={cpf}
+                      onChange={e => setCpf(formatCPF(e.target.value))}
                       onKeyDown={e => e.key === 'Enter' && consultar()}
                       className="w-full border border-gray-400 px-3 py-2.5 text-[14px] outline-none focus:border-[#1351B4] focus:ring-2 focus:ring-[#1351B4]/20"
                       style={{ maxWidth: 400 }}
@@ -125,12 +124,12 @@ export default function AnatelHomePage() {
                     <div className="p-5">
                       <div className="space-y-3">
                         <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                          <span className="text-gray-600 text-sm uppercase">CNPJ</span>
-                          <span className="text-[#071D41] font-semibold">{cnpj}</span>
+                          <span className="text-gray-600 text-sm uppercase">CPF</span>
+                          <span className="text-[#071D41] font-semibold">{formatCPF(cpf)}</span>
                         </div>
                         <div className="flex justify-between items-start py-2 border-b border-gray-100">
-                          <span className="text-gray-600 text-sm uppercase">Razão Social</span>
-                          <span className="text-[#071D41] font-semibold text-right max-w-[60%]">{empresa.nome?.replace(/\s*\d{11,}$/, '').replace(/^\d{2}\.\d{3}\.\d{3}\s*/, '') || 'N/A'}</span>
+                          <span className="text-gray-600 text-sm uppercase">Nome</span>
+                          <span className="text-[#071D41] font-semibold text-right max-w-[60%]">{pessoa.nome || 'N/A'}</span>
                         </div>
                         <div className="flex justify-between items-start py-2 border-b border-gray-100">
                           <span className="text-gray-600 text-sm uppercase">Serviço</span>
@@ -168,7 +167,7 @@ export default function AnatelHomePage() {
                   </div>
 
                   {/* Card Telefone Móvel Vinculado */}
-                  {empresa.telefone && (
+                  {pessoa.telefone && (
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                       <div className="bg-[#1351B4] px-5 py-3">
                         <h3 className="text-white font-semibold text-sm uppercase tracking-wide">Telefone Móvel Vinculado</h3>
@@ -176,7 +175,7 @@ export default function AnatelHomePage() {
                       <div className="p-5">
                         <div className="flex justify-between items-center py-2">
                           <span className="text-gray-600 text-sm">Número</span>
-                          <span className="text-[#1351B4] font-bold text-lg">{empresa.telefone}</span>
+                          <span className="text-[#1351B4] font-bold text-lg">{pessoa.telefone}</span>
                         </div>
                       </div>
                     </div>
@@ -200,7 +199,7 @@ export default function AnatelHomePage() {
                     <div className="max-w-3xl mx-auto px-4 py-4">
                       <button
                         data-testid="btn-ver-debitos"
-                        onClick={() => navigate('/anatel/debitos', { state: { dadosEmpresa: empresa } })}
+                        onClick={() => navigate('/anatel/debitos', { state: { dadosPessoa: pessoa } })}
                         className="w-full flex items-center justify-center gap-3 text-white font-bold text-lg px-8 py-4 cursor-pointer transition-colors hover:opacity-90 rounded-lg"
                         style={{ background: '#00A859' }}
                       >
@@ -225,7 +224,7 @@ export default function AnatelHomePage() {
                 </p>
                 <ul className="space-y-2">
                   {[
-                    'A Taxa de Fiscalização de Funcionamento (TFF) é cobrada anualmente de toda empresa com linha ativa.',
+                    'A Taxa de Fiscalização de Funcionamento (TFF) é cobrada anualmente de todo contribuinte com linha ativa.',
                     'O não pagamento implica suspensão do serviço e inscrição em dívida ativa.',
                     'O pagamento pode ser realizado via PIX com aprovação imediata.',
                   ].map((item, i) => (

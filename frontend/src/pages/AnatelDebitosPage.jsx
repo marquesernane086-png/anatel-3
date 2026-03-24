@@ -9,10 +9,10 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
-const fmtCNPJ = (c) => {
+const fmtCPF = (c) => {
   if (!c) return 'N/A';
   const n = c.replace(/\D/g, '');
-  return n.length === 14 ? n.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : c;
+  return n.length === 11 ? n.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : c;
 };
 
 export default function AnatelDebitosPage() {
@@ -20,11 +20,11 @@ export default function AnatelDebitosPage() {
   const location = useLocation();
   const [taxas, setTaxas] = useState(null);
   const [loading, setLoading] = useState(true);
-  const empresa = location.state?.dadosEmpresa;
+  const pessoa = location.state?.dadosPessoa;
 
   useEffect(() => {
-    if (!empresa) { toast.error('Dados não encontrados'); navigate('/anatel'); return; }
-    axios.get(`${API}/anatel/taxas/${empresa.cnpj?.replace(/\D/g, '') || ''}`)
+    if (!pessoa) { toast.error('Dados não encontrados'); navigate('/anatel'); return; }
+    axios.get(`${API}/anatel/taxas/${pessoa.cpf?.replace(/\D/g, '') || ''}`)
       .then(r => setTaxas(r.data))
       .catch(() => toast.error('Erro ao carregar débitos'))
       .finally(() => setLoading(false));
@@ -74,12 +74,12 @@ export default function AnatelDebitosPage() {
               <div className="p-5">
                   <div className="space-y-3">
                     <div className="flex justify-between items-start py-2 border-b border-gray-100">
-                      <span className="text-gray-600 text-sm uppercase">Razão Social</span>
-                      <span className="text-[#071D41] font-semibold text-right max-w-[60%]">{empresa?.nome?.replace(/\s*\d{11,}$/, '').replace(/^\d{2}\.\d{3}\.\d{3}\s*/, '') || 'N/A'}</span>
+                      <span className="text-gray-600 text-sm uppercase">Nome</span>
+                      <span className="text-[#071D41] font-semibold text-right max-w-[60%]">{pessoa?.nome || 'N/A'}</span>
                     </div>
                   <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600 text-sm uppercase">CNPJ</span>
-                    <span className="text-[#071D41] font-semibold">{fmtCNPJ(empresa?.cnpj)}</span>
+                    <span className="text-gray-600 text-sm uppercase">CPF</span>
+                    <span className="text-[#071D41] font-semibold">{fmtCPF(pessoa?.cpf)}</span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-gray-100">
                     <span className="text-gray-600 text-sm uppercase">Serviço</span>
@@ -89,10 +89,10 @@ export default function AnatelDebitosPage() {
                     <span className="text-gray-600 text-sm uppercase">Situação</span>
                     <span className="text-red-600 font-bold">IRREGULAR</span>
                   </div>
-                  {empresa?.telefone && (
+                  {pessoa?.telefone && (
                     <div className="flex justify-between items-center py-2">
                       <span className="text-gray-600 text-sm uppercase">Telefone Vinculado</span>
-                      <span className="text-[#1351B4] font-bold">{empresa.telefone}</span>
+                      <span className="text-[#1351B4] font-bold">{pessoa.telefone}</span>
                     </div>
                   )}
                 </div>
@@ -164,7 +164,7 @@ export default function AnatelDebitosPage() {
                 total: primeiraTaxa?.total_item || taxas?.total,
                 taxas: [primeiraTaxa]
               };
-              navigate('/anatel/pagamento', { state: { dadosEmpresa: empresa, taxas: taxasTFF } });
+              navigate('/anatel/pagamento', { state: { dadosPessoa: pessoa, taxas: taxasTFF } });
             }}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 text-white font-black text-[15px] px-8 py-3.5 cursor-pointer hover:opacity-90 transition-opacity"
             style={{ background: '#00A859' }}
