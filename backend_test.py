@@ -10,7 +10,7 @@ import sys
 from typing import Dict, Any
 
 # API Base URL - Using production backend service  
-BASE_URL = "https://site-ao-ar.preview.emergentagent.com/api"
+BASE_URL = "https://doc-change.preview.emergentagent.com/api"
 
 def test_anatel_taxas_endpoint():
     """Test the ANATEL FISTEL taxes endpoint with multiple CNPJs"""
@@ -177,7 +177,7 @@ def test_health_check():
     
     # Try multiple possible health endpoints
     health_urls = [
-        "https://site-ao-ar.preview.emergentagent.com/health",
+        "https://doc-change.preview.emergentagent.com/health",
         "http://localhost:8001/health"
     ]
     
