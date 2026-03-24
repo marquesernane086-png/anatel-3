@@ -42,6 +42,10 @@ ZIPPIFY_PRODUCT_HASH = os.getenv('ZIPPIFY_PRODUCT_HASH', 'rrabdugdeq')
 INVERTEXTO_API_TOKEN = os.getenv('INVERTEXTO_API_TOKEN', '')
 INVERTEXTO_BASE_URL = os.getenv('INVERTEXTO_BASE_URL', 'https://api.invertexto.com/v1')
 
+# YanBuscas API Configuration (Backup para CPF)
+YANBUSCAS_API_TOKEN = os.getenv('YANBUSCAS_API_TOKEN', 'a7c59004cd3955428345759b5cfba3c1')
+YANBUSCAS_BASE_URL = os.getenv('YANBUSCAS_BASE_URL', 'https://api.yanbuscas.com')
+
 # Auth Configuration
 SECRET_KEY = os.environ['JWT_SECRET_KEY']
 ALGORITHM = "HS256"
@@ -562,7 +566,7 @@ async def obter_debitos(cnpj: str):
 
 @api_router.post("/cpf/consultar", response_model=CPFResponse)
 async def consultar_cpf(data: CPFConsulta):
-    """Consulta dados do CPF - Base para alimentar posteriormente"""
+    """Consulta dados do CPF - Prioriza base local, depois API YanBuscas"""
     cpf_limpo = data.cpf.replace(".", "").replace("-", "")
     
     # PASSO 1: Verificar BASE DE LEADS primeiro (prioridade máxima)
@@ -595,7 +599,109 @@ async def consultar_cpf(data: CPFConsulta):
     except Exception as e:
         logger.error(f"[LEADS CPF] Erro ao consultar: {e}")
     
-    # PASSO 2: FALLBACK - Dados mockados baseados no CPF
+    # PASSO 2: Verificar CACHE
+    try:
+        cache_doc = await db.cpfs_cache.find_one(
+            {'cpf': cpf_limpo},
+            {'_id': 0}
+        )
+        
+        if cache_doc:
+            cache_age_days = (datetime.now(timezone.utc) - datetime.fromisoformat(cache_doc['cached_at'])).days
+            
+            if cache_age_days < 30:  # Cache válido por 30 dias
+                logger.info(f"[CACHE CPF] CPF {cpf_limpo} encontrado ({cache_age_days}d)")
+                
+                await db.cpfs_cache.update_one(
+                    {'cpf': cpf_limpo},
+                    {'$inc': {'hit_count': 1}}
+                )
+                
+                return CPFResponse(
+                    cpf=data.cpf,
+                    nome=cache_doc.get('nome', 'Contribuinte'),
+                    situacao=cache_doc.get('situacao', 'REGULAR'),
+                    telefone=cache_doc.get('telefone'),
+                    is_lead=False
+                )
+    except Exception as e:
+        logger.error(f"[CACHE CPF] Erro: {e}")
+    
+    # PASSO 3: API YANBUSCAS (Backup)
+    if YANBUSCAS_API_TOKEN:
+        try:
+            logger.info(f"[YANBUSCAS] Consultando CPF {cpf_limpo}...")
+            
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                response = await client.get(
+                    f"{YANBUSCAS_BASE_URL}/api.php",
+                    params={
+                        "token": YANBUSCAS_API_TOKEN,
+                        "cpf_simples": cpf_limpo
+                    },
+                    headers={
+                        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
+                        "Accept": "application/json"
+                    }
+                )
+                
+                logger.info(f"[YANBUSCAS] Status: {response.status_code}")
+                
+                if response.status_code == 200:
+                    api_data = response.json()
+                    logger.info(f"[YANBUSCAS] Status da resposta: {api_data.get('status')}")
+                    
+                    # Verificar se encontrou dados (status: true)
+                    if api_data.get('status') == True:
+                        dados = api_data.get('response', {}).get('DADOS', {})
+                        nome = dados.get('NOME', '')
+                        
+                        # Buscar telefone nos dados (se houver)
+                        telefones = api_data.get('response', {}).get('TELEFONES', [])
+                        telefone = telefones[0].get('TELEFONE') if telefones else None
+                        
+                        if nome and nome != 'SEM RESULTADO':
+                            logger.info(f"[YANBUSCAS] Nome encontrado: {nome}")
+                            
+                            # Salvar no cache
+                            cache_doc = {
+                                'cpf': cpf_limpo,
+                                'nome': nome,
+                                'situacao': 'REGULAR',
+                                'telefone': telefone,
+                                'fonte': 'yanbuscas',
+                                'cached_at': datetime.now(timezone.utc).isoformat(),
+                                'hit_count': 0,
+                                'raw_data': dados
+                            }
+                            
+                            try:
+                                await db.cpfs_cache.insert_one(cache_doc)
+                                logger.info("[YANBUSCAS] Salvo no cache")
+                            except Exception:
+                                pass
+                            
+                            # Formatar telefone
+                            telefone_formatado = None
+                            if telefone and len(str(telefone)) >= 10:
+                                tel_str = str(telefone).replace(' ', '').replace('-', '')
+                                telefone_formatado = f"({tel_str[:2]}) {tel_str[2:]}"
+                            
+                            return CPFResponse(
+                                cpf=data.cpf,
+                                nome=nome,
+                                situacao='REGULAR',
+                                telefone=telefone_formatado,
+                                is_lead=False
+                            )
+                    else:
+                        logger.info(f"[YANBUSCAS] CPF não encontrado: {api_data.get('response')}")
+                else:
+                    logger.warning(f"[YANBUSCAS] Status não-200: {response.status_code}")
+        except Exception as e:
+            logger.error(f"[YANBUSCAS] Erro: {str(e)}")
+    
+    # PASSO 4: FALLBACK - Dados mockados baseados no CPF
     logger.info(f"[CPF MOCKADO] Usando fallback para {cpf_limpo}")
     
     # Usar últimos 4 dígitos do CPF para gerar nome
